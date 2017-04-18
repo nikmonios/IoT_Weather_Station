@@ -20,8 +20,8 @@
  **************************************************************************/
  
 // WiFi Definitions
-const char WiFiSSID[] = "USE_CASE_AP";
-const char WiFiPSK[] = "syggroy336";
+const char WiFiSSID[] = "USE_CASE_SSD";
+const char WiFiPSK[] = "passw0rd!";
 
 // Pin Definitions
 const int LED_PIN = 5; // Thing's onboard, green LED
