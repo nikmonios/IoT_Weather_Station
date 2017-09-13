@@ -5,7 +5,7 @@
 <b>WORK IN PROGRESS!!!</b>
 
 
-<strong>Flashing the boards:</strong>
+<strong>Development boards used: </strong>
 1) Texas Instruments MSP-432P401R - http://www.ti.com/tool/MSP-EXP432P401R
 2) Raspberry PI 3 - Model B  - https://www.adafruit.com/products/3055
 3) Sparkfun ESP8266 Thing - https://www.sparkfun.com/products/13231
@@ -13,7 +13,7 @@
 
 
 
-<strong>Flashing the boards:</strong>
+<strong>Flashing the boards: </strong>
 To flash the MSP432 launchpad, I used the Energia IDE. It is an open source platform, similar to the Arduino one, used to flash Texas Instruments Launchpads. You can download it free on http://energia.nu/
 
 
