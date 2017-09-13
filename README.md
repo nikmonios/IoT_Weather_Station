@@ -5,7 +5,7 @@
 <b>WORK IN PROGRESS!!!</b>
 <br>
 
-<strong>Development boards used: </strong>
+<br><strong>Development boards used: </strong>
 1) Texas Instruments MSP-432P401R - http://www.ti.com/tool/MSP-EXP432P401R
 2) Raspberry PI 3 - Model B  - https://www.adafruit.com/products/3055
 3) Sparkfun ESP8266 Thing - https://www.sparkfun.com/products/13231
