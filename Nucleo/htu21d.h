@@ -1,3 +1,28 @@
+/**
+ * @author Alex Lipford
+ * Georgia Institute of Technology 
+ * ECE 4180 Embeded Systems Design
+ * Professor Hamblen
+ * 10/19/2014
+ * 
+ * @section LICENSE
+ * ----------------------------------------------------------------------------
+ * "THE BEER-WARE LICENSE" (Revision 42):
+ * <alexlipford@gmail.com> wrote this file. As long as you retain this notice you
+ * can do whatever you want with this stuff. If we meet some day, and you think
+ * this stuff is worth it, you can buy me a beer in return.
+ * ----------------------------------------------------------------------------
+ *
+ *
+ * @section DESCRIPTION
+ *
+ * Honeywell HTU21D Humidity and Temperature sensor.
+ *
+ * Datasheet, specs, and information:
+ *
+ * https://www.sparkfun.com/products/12064
+ */
+ 
 #ifndef HTU21D_H
 #define HTU21D_H
  

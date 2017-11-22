@@ -166,7 +166,7 @@ public:
 private:
     int m_i2c_start(bool readMode);
     void m_i2c_stop(void);
-    unsigned char m_i2c_write(unsigned char data);
+    unsigned char m_i2c_write(char data);
     unsigned char m_i2c_readAck(void);
     unsigned char m_i2c_readNak(void);
     void m_i2c_send(char cmd);

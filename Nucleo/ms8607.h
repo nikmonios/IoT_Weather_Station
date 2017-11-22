@@ -3,7 +3,7 @@
  
 #include "mbed.h"
 
-enum MS8607_humidity_i2c_master_mode { MS8607_i2c_hold, MS8607_i2c_no_hold };
+enum MS8607_humidity_i2c_master_mode { ms8607_i2c_hold, ms8607_i2c_no_hold };
 
 enum MS8607_status 
 {

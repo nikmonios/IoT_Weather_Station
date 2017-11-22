@@ -1,3 +1,18 @@
+//!
+//! @file an520_I2C.c,v
+//!
+//! Copyright (c) 2009 MEAS Switzerland
+//!
+//!
+//!
+//! @brief This C code is for starter reference only. It is written for the
+//! MEAS Switzerland MS56xx pressure sensor modules and Atmel Atmega644p
+//! microcontroller.
+//!
+//! @version 1.0 $Id: an520_I2C.c,v 1.0
+//!
+//! @todo
+ 
 #include "mbed.h"
 #include "ms5637.h"
  
@@ -48,7 +63,7 @@ void MS5637::m_i2c_stop(void) {
 //! @return remote ack status
 //********************************************************
  
-unsigned char MS5637::m_i2c_write(unsigned char data) {
+unsigned char MS5637::m_i2c_write(char data) {
     int twst = _i2c.write(data);
     return(twst);
 }
