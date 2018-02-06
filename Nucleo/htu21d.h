@@ -1,105 +1,186 @@
-/**
- * @author Alex Lipford
- * Georgia Institute of Technology 
- * ECE 4180 Embeded Systems Design
- * Professor Hamblen
- * 10/19/2014
- * 
- * @section LICENSE
- * ----------------------------------------------------------------------------
- * "THE BEER-WARE LICENSE" (Revision 42):
- * <alexlipford@gmail.com> wrote this file. As long as you retain this notice you
- * can do whatever you want with this stuff. If we meet some day, and you think
- * this stuff is worth it, you can buy me a beer in return.
- * ----------------------------------------------------------------------------
- *
- *
- * @section DESCRIPTION
- *
- * Honeywell HTU21D Humidity and Temperature sensor.
- *
- * Datasheet, specs, and information:
- *
- * https://www.sparkfun.com/products/12064
- */
- 
 #ifndef HTU21D_H
 #define HTU21D_H
- 
-/**
- * Includes
- */
+
 #include "mbed.h"
  
-/**
- * Defines
- */
-// Acquired from Datasheet.
- 
-#define HTU21D_I2C_ADDRESS  0x40 
-#define TRIGGER_TEMP_MEASURE  0xE3
-#define TRIGGER_HUMD_MEASURE  0xE5
- 
- 
-//Commands.
-#define HTU21D_EEPROM_WRITE 0x80
-#define HTU21D_EEPROM_READ  0x81
- 
- 
-/**
- * Honeywell HTU21D digital humidity and temperature sensor.
- */
-class HTU21D {
- 
+// Enum
+enum htu21_status 
+{
+  htu21_status_ok,
+  htu21_status_i2c_transfer_error,
+  htu21_status_no_i2c_acknowledge,
+  htu21_status_crc_error
+};
+
+enum htu21_i2c_master_mode { htu21_i2c_no_hold, htu21_i2c_hold };
+
+enum htu21_status_code 
+{
+  htu21_STATUS_OK = 0,
+  htu21_STATUS_ERR_OVERFLOW = 1,
+  htu21_STATUS_ERR_TIMEOUT = 4
+};
+
+enum htu21_heater_status { htu21_heater_off, htu21_heater_on };
+
+enum htu21_battery_status { htu21_battery_ok, htu21_battery_low };
+
+enum htu21_resolution 
+{
+  htu21_resolution_t_14b_rh_12b = 0,
+  htu21_resolution_t_12b_rh_8b,
+  htu21_resolution_t_13b_rh_10b,
+  htu21_resolution_t_11b_rh_11b
+};
+
+// Functions
+class HTU21D 
+{
+
 public:
- 
-    /**
-     * Constructor.
-     *
-     * @param sda mbed pin to use for SDA line of I2C interface.
-     * @param scl mbed pin to use for SCL line of I2C interface.
-     */
-    HTU21D(PinName sda, PinName scl);
- 
- 
-    //Samples the temperature, input void, outputs an int in celcius.
-    float sample_ctemp(void);
-    
-       //Samples the temperature, input void, outputs an int in fahrenheit.
-    int sample_ftemp(void);
-    
-       //Samples the temperature, input void, outputs an int in kelvin.
-    int sample_ktemp(void);
-    
-    //Samples the humidity, input void, outputs and int.
-    int sample_humid(void);
-    
-    bool is_connected(void);
- 
-   
- 
+  HTU21D(PinName sda, PinName scl);
+
+  /**
+   * \brief Get heater status
+   *
+   * \param[in] htu21_heater_status* : Return heater status (above or below
+   *2.5V)
+   *                        - htu21_heater_off,
+   *                      - htu21_heater_on
+   *
+   * \return htu21_status : status of HTU21
+   *       - htu21_status_ok : I2C transfer completed successfully
+   *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
+   *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
+   */
+  enum htu21_status get_heater_status(enum htu21_heater_status *heater);
+
+  /**
+   * \brief Enable heater
+   *
+   * \return htu21_status : status of HTU21
+   *       - htu21_status_ok : I2C transfer completed successfully
+   *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
+   *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
+   */
+  enum htu21_status enable_heater(void);
+
+  /**
+   * \brief Disable heater
+   *
+   * \return htu21_status : status of HTU21
+   *       - htu21_status_ok : I2C transfer completed successfully
+   *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
+   *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
+   */
+  enum htu21_status disable_heater(void);
+
+  /**
+   * \brief Provide battery status
+   *
+   * \param[out] htu21_battery_status* : Battery status
+   *                      - htu21_battery_ok,
+   *                      - htu21_battery_low
+   *
+   * \return status of HTU21
+   *       - htu21_status_ok : I2C transfer completed successfully
+   *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
+   *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
+   */
+  enum htu21_status get_battery_status(enum htu21_battery_status *);
+
+  /**
+   * \brief Reads the htu21 serial number.
+   *
+   * \param[out] uint64_t* : Serial number
+   *
+   * \return htu21_status : status of HTU21
+   *       - htu21_status_ok : I2C transfer completed successfully
+   *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
+   *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
+   *       - htu21_status_crc_error : CRC check error
+   */
+  enum htu21_status reset(void);
+
+  /**
+   * \brief Reads the relative humidity and temperature value.
+   *
+   * \param[out] float* : Celsius Degree temperature value
+   * \param[out] float* : %RH Relative Humidity value
+   *
+   * \return htu21_status : status of HTU21
+   *       - htu21_status_ok : I2C transfer completed successfully
+   *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
+   *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
+   *       - htu21_status_crc_error : CRC check error
+   */
+  enum htu21_status read_temperature_and_relative_humidity(float *temperature, float *humidity);
+
+  /**
+   * \brief Set temperature and humidity ADC resolution.
+   *
+   * \param[in] htu21_resolution : Resolution requested
+   *
+   * \return htu21_status : status of HTU21
+   *       - htu21_status_ok : I2C transfer completed successfully
+   *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
+   *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
+   *       - htu21_status_crc_error : CRC check error
+   */
+  enum htu21_status set_resolution(enum htu21_resolution res);
+
+  /**
+   * \brief Returns result of compensated humidity
+   *
+   * \param[in] float - Actual temperature measured (degC)
+   * \param[in] float - Actual relative humidity measured (%RH)
+   *
+   * \return float - Compensated humidity (%RH).
+   */
+  float compute_compensated_humidity(float temperature, float relative_humidity);
+
+  /**
+   * \brief Returns the computed dew point
+   *
+   * \param[in] float - Actual temperature measured (degC)
+   * \param[in] float - Actual relative humidity measured (%RH)
+   *
+   * \return float - Dew point temperature (DegC).
+   */
+  float compute_dew_point(float temperature, float relative_humidity);
+
+  /**
+   * \brief Reads the htu21 serial number.
+   *
+   * \param[out] uint64_t* : Serial number
+   *
+   * \return htu21_status : status of HTU21
+   *       - htu21_status_ok : I2C transfer completed successfully
+   *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
+   *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
+   *       - htu21_status_crc_error : CRC check error
+   */
+  enum htu21_status read_serial_number(uint64_t *serial_number);
+
+  /**
+   * \brief Set I2C master mode.
+   *        This determines whether the program will hold while ADC is accessed
+   * or will wait some time
+   *
+   * \param[in] htu21_i2c_master_mode : I2C mode
+   *
+   */
+  void set_i2c_master_mode(enum htu21_i2c_master_mode mode);
+
 private:
- 
-    I2C* i2c_;
- 
-    /**
-     * Write to EEPROM or RAM on the device.
-     *
-     * @param EepromOrRam 0x80 -> Writing to EEPROM
-     * @param address Address to write to.
-     * @param data Data to write.
-     */
-    void write(int EepromOrRam, int address, int data);
- 
-    /**
-     * Read EEPROM or RAM on the device.
-     *
-     * @param EepromOrRam 0x81 -> Reading from EEPROM
-     * @param address Address to read from.
-     * @return The contents of the memory address.
-     */
-    int read(int EepromOrRam, int address);
- 
+  enum htu21_status read_user_register(uint8_t *value);
+  enum htu21_status write_user_register(uint8_t value);
+  enum htu21_status write_command(uint8_t cmd);
+  enum htu21_status temperature_conversion_and_read_adc(uint16_t *adc);
+  enum htu21_status humidity_conversion_and_read_adc(uint16_t *adc);
+  enum htu21_status crc_check(uint16_t value, uint8_t crc);
+  
+  I2C* i2c_;
 };
  
 #endif /* HTU21D_H */

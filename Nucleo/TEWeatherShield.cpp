@@ -1,17 +1,13 @@
 #include "TEWeatherShield.h"
 
-TEWeatherShield::TEWeatherShield(void): HTU21D(D14, D15), MS5637(D14, D15), MS8607(D14, D15){} //constructor for sensors, pins are sda and scl
+TEWeatherShield::TEWeatherShield(void): HTU21D(D14, D15), MS5637(D14, D15), MS8607(D14, D15), TSYS01(D14, D15){} //constructor for sensors, pins are sda and scl
 
 
 void TEWeatherShield::begin(void) 
 {
   selectSensor(Sensor_NONE);
-
-  //HTU21D.begin();
-  //MS5637.begin();
-  //MS8607.begin();
-  //TSYS01.begin();
-  //TSD305.begin();
+  
+  TSYS01.begin();
 }
 
 void TEWeatherShield::selectSensor(enum TEWeatherShield_Sensor sensor) 
@@ -40,22 +36,23 @@ void TEWeatherShield::selectSensor(enum TEWeatherShield_Sensor sensor)
       myled2 = 1;
       wait_ms(5);
       break;
-    /*case Sensor_TSYS01:
-      ///digitalWrite(31, LOW);
-      //digitalWrite(32, HIGH);
-      //digitalWrite(33, LOW);
-      delay(5);
+    case Sensor_TSYS01:
+      myled0 = 0;
+      myled1 = 1;
+      myled2 = 0;
+      wait_ms(5);
       break;
-    case Sensor_TSD305:
+    /*case Sensor_TSD305:
       //digitalWrite(31, LOW);
       //digitalWrite(32, HIGH);
       //digitalWrite(33, HIGH);
       delay(5);
       break;*/
     case Sensor_NONE:
-      //digitalWrite(31, HIGH);
-      //digitalWrite(32, HIGH);
-      //digitalWrite(33, HIGH);
+      myled0 = 1;
+      myled1 = 1;
+      myled2 = 1;
+      wait_ms(5);
       break;
   }
 }
@@ -66,6 +63,6 @@ void TEWeatherShield::selectMS5637() { selectSensor(Sensor_MS5637); }
 
 void TEWeatherShield::selectMS8607() { selectSensor(Sensor_MS8607); }
 
-//void TEWeatherShield::selectTSYS01() { selectSensor(Sensor_TSYS01); }
+void TEWeatherShield::selectTSYS01() { selectSensor(Sensor_TSYS01); }
 
 //void TEWeatherShield::selectTSD305() { selectSensor(Sensor_TSD305); }

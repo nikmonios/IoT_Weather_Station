@@ -1,5 +1,5 @@
 #include "tsys01.h"
-#include <Wire.h>
+#include "mbed.h"
 
 // TSYS01 device commands
 #define TSYS01_RESET_COMMAND 0x1E
@@ -18,16 +18,26 @@
 #define TSYS01_CONVERSION_TIME 10
 
 // function
-tsys01::tsys01(void)
-    : coeff_mul{COEFF_MUL_0, COEFF_MUL_1, COEFF_MUL_2, COEFF_MUL_3, COEFF_MUL_4}
-    {
-        tsys01_coeff_read = false;
-    }
+tsys01::tsys01(PinName sda, PinName scl)
+{
+  i2c_ = new I2C(sda, scl);
+  //400KHz, as specified by the datasheet.
+  i2c_->frequency(400000);
+  float tempArray[] = {COEFF_MUL_0, COEFF_MUL_1, COEFF_MUL_2, COEFF_MUL_3, COEFF_MUL_4};
+  coeff_mul = new float[5];
+  for(int idx = 0; idx < 5; idx++)
+        coeff_mul[idx] = tempArray[idx]; // Copies each value into the tones_freq array
+    delete[] tempArray; // free's the memory used by tempArray
+  tsys01_coeff_read = false;
+}
 
 /**
  * \brief Perform initial configuration. Has to be called once.
  */
-void tsys01::begin(void) { Wire.begin(); }
+void tsys01::begin(void)
+{ 
+    tsys01_i2c_address = TSYS01_ADDR_CSB_0;
+}
 
 /**
  * \brief Configures TSYS01 I2C address to be used depending on HW configuration
@@ -35,7 +45,7 @@ void tsys01::begin(void) { Wire.begin(); }
  * \param[in] address : TSYS01 I2C address
  *
  */
-void tsys01::set_address(enum tsys01_address address)
+void tsys01::set_address(enum tsys01_address address) 
 {
   if (address == tsys01_i2c_address_csb_1)
     tsys01_i2c_address = TSYS01_ADDR_CSB_1;
@@ -43,18 +53,6 @@ void tsys01::set_address(enum tsys01_address address)
     tsys01_i2c_address = TSYS01_ADDR_CSB_0;
 }
 
-/**
- * \brief Check whether TSYS01 device is connected
- *
- * \return bool : status of TSYS01
- *       - true : Device is present
- *       - false : Device is not acknowledging I2C address
-  */
-bool tsys01::is_connected(void)
-{
-  Wire.beginTransmission((uint8_t)tsys01_i2c_address);
-  return (Wire.endTransmission() == 0);
-}
 
 /**
  * \brief Writes the TSYS01 8-bits command with the value passed
@@ -66,18 +64,14 @@ bool tsys01::is_connected(void)
  *       - tsys01_status_i2c_transfer_error : Problem with i2c transfer
  *       - tsys01_status_no_i2c_acknowledge : I2C did not acknowledge
  */
-enum tsys01_status tsys01::write_command(uint8_t cmd)
+enum tsys01_status tsys01::write_command(uint8_t cmd) 
 {
   uint8_t i2c_status;
-
-  Wire.beginTransmission((uint8_t)tsys01_i2c_address);
-  Wire.write(cmd);
-  i2c_status = Wire.endTransmission();
-
-  if (i2c_status == tsys01_STATUS_ERR_OVERFLOW)
-    return tsys01_status_no_i2c_acknowledge;
-  if (i2c_status != tsys01_STATUS_OK)
-    return tsys01_status_i2c_transfer_error;
+  char tx[1];
+  
+  tx[0] = cmd;
+  
+  i2c_->write((tsys01_i2c_address << 1) & 0xFE, tx, 1);
 
   return tsys01_status_ok;
 }
@@ -90,7 +84,7 @@ enum tsys01_status tsys01::write_command(uint8_t cmd)
  *       - tsys01_status_i2c_transfer_error : Problem with i2c transfer
  *       - tsys01_status_no_i2c_acknowledge : I2C did not acknowledge
  */
-enum tsys01_status tsys01::reset(void)
+enum tsys01_status tsys01::reset(void) 
 {
   return write_command(TSYS01_RESET_COMMAND);
 }
@@ -106,31 +100,20 @@ enum tsys01_status tsys01::reset(void)
  *       - tsys01_status_i2c_transfer_error : Problem with i2c transfer
  *       - tsys01_status_no_i2c_acknowledge : I2C did not acknowledge
  */
-enum tsys01_status tsys01::read_eeprom_coeff(uint8_t command, uint16_t *coeff)
+enum tsys01_status tsys01::read_eeprom_coeff(uint8_t command, uint16_t *coeff) 
 {
-  enum tsys01_status status;
   uint8_t i2c_status;
-  uint8_t buffer[2];
-  uint8_t i;
+  char tx[1];
+  char rx[2];
 
-  Wire.beginTransmission((uint8_t)tsys01_i2c_address);
-  Wire.write(command);
-  i2c_status = Wire.endTransmission();
+  tx[0] = command;
+  
+  i2c_->write((tsys01_i2c_address << 1) & 0xFE, tx, 1);
+  
+  i2c_->read((tsys01_i2c_address << 1) | 0x01, rx, 2);
+  wait_ms(1);
 
-  Wire.requestFrom((uint8_t)tsys01_i2c_address, 2U);
-  for (i = 0; i < 2; i++) 
-  {
-    buffer[i] = Wire.read();
-  }
-
-  // Send the conversion command
-
-  if (i2c_status == tsys01_STATUS_ERR_OVERFLOW)
-    return tsys01_status_no_i2c_acknowledge;
-  if (i2c_status != tsys01_STATUS_OK)
-    return tsys01_status_i2c_transfer_error;
-
-  *coeff = (buffer[0] << 8) | buffer[1];
+  *coeff = (rx[0] << 8) | rx[1];
 
   return tsys01_status_ok;
 }
@@ -152,8 +135,7 @@ enum tsys01_status tsys01::read_eeprom(void)
   // Read all coefficients from EEPROM
   for (i = 0; i < PROM_ELEMENTS_NUMBER; i++) 
   {
-    status = read_eeprom_coeff(PROM_ADDRESS_READ_ADDRESS_0 + i * 2,
-                               eeprom_coeff + i);
+    status = read_eeprom_coeff(PROM_ADDRESS_READ_ADDRESS_0 + i * 2, eeprom_coeff + i);
     if (status != tsys01_status_ok)
       return status;
   }
@@ -199,45 +181,34 @@ bool tsys01::crc_check(uint16_t *n_prom)
  */
 enum tsys01_status tsys01::conversion_and_read_adc(uint32_t *adc) 
 {
-  enum tsys01_status status;
-  uint8_t i2c_status;
-  uint8_t buffer[3];
-  uint8_t i;
+  enum tsys01_status i2c_status;
+  char tx[1];
+  char rx[3];
 
   /* Read data */
-
+  tx[0] = TSYS01_START_ADC_CONVERSION;
+  i2c_->write((tsys01_i2c_address << 1) & 0xFE, tx, 1);
   // Wait for conversion
-  Wire.beginTransmission((uint8_t)tsys01_i2c_address);
-  Wire.write((uint8_t)TSYS01_START_ADC_CONVERSION);
-  Wire.endTransmission();
-  delay(TSYS01_CONVERSION_TIME);
+  wait_ms(TSYS01_CONVERSION_TIME);
 
   // Read ADC
-  Wire.beginTransmission((uint8_t)tsys01_i2c_address);
-  Wire.write((uint8_t)TSYS01_READ_ADC_TEMPERATURE);
-  Wire.endTransmission();
-  Wire.requestFrom((uint8_t)tsys01_i2c_address, 3U);
-  for (i = 0; i < 3; i++) 
-  {
-    buffer[i] = Wire.read();
-  }
+  tx[0] = TSYS01_READ_ADC_TEMPERATURE;
+  i2c_->write((tsys01_i2c_address << 1) & 0xFE, tx, 1);
+  i2c_->read((tsys01_i2c_address << 1) | 0x01, rx, 3);
 
-  if (status != tsys01_status_ok)
-    return status;
+  i2c_status = tsys01_status_ok;
+  
+  
+  if (i2c_status != tsys01_status_ok)
+    return i2c_status;
 
   // Send the read command
-  if (status != tsys01_status_ok)
-    return status;
+  if (i2c_status != tsys01_status_ok)
+    return i2c_status;
 
-  if (i2c_status == tsys01_STATUS_ERR_OVERFLOW)
-    return tsys01_status_no_i2c_acknowledge;
-  if (i2c_status != tsys01_STATUS_OK)
-    return tsys01_status_i2c_transfer_error;
+  *adc = ((uint32_t)rx[0] << 16) | ((uint32_t)rx[1] << 8) | (uint32_t)rx[2];
 
-  *adc = ((uint32_t)buffer[0] << 16) | ((uint32_t)buffer[1] << 8) |
-         (uint32_t)buffer[2];
-
-  return status;
+  return i2c_status;
 }
 
 /**
@@ -287,8 +258,7 @@ enum tsys01_status tsys01::read_temperature(float *temperature)
 
   adc /= 256;
 
-  for (i = 4; i > 0; i--) 
-  {
+  for (i = 4; i > 0; i--) {
     temp += coeff_mul[i] *
             eeprom_coeff[1 + (4 - i)]; // eeprom_coeff[1+(4-i)] equiv. ki
     temp *= (float)adc / 100000;

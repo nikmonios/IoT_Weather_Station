@@ -55,15 +55,6 @@ public:
   void begin();
 
   /**
-  * \brief Check whether MS8607 device is connected
-  *
-  * \return bool : status of MS8607
-  *       - true : Device is present
-  *       - false : Device is not acknowledging I2C address
-  */
-  bool is_connected(void);
-
-  /**
    * \brief Reset the MS8607 device
    *
    * \return MS8607_status : status of MS8607
@@ -393,10 +384,7 @@ private:
   uint32_t hsensor_conversion_time;
   bool hsensor_heater_on;
   bool psensor_coeff_read;
-  uint32_t psensor_conversion_time[6];
-  
-  protected:
-    I2C     _i2c;
+  uint32_t* psensor_conversion_time;
 };
 
 #endif
