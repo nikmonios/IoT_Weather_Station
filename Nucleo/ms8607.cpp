@@ -105,11 +105,15 @@ static uint16_t eeprom_coeff[COEFFICIENT_NUMBERS+1];
 
 MS8607::MS8607(PinName sda, PinName scl)
 {
-  uint32_t tempArray[] = {PSENSOR_CONVERSION_TIME_OSR_256,  PSENSOR_CONVERSION_TIME_OSR_512,
+  uint32_t tempArray[] = 
+  {
+          PSENSOR_CONVERSION_TIME_OSR_256,  PSENSOR_CONVERSION_TIME_OSR_512,
           PSENSOR_CONVERSION_TIME_OSR_1024, PSENSOR_CONVERSION_TIME_OSR_2048,
-          PSENSOR_CONVERSION_TIME_OSR_4096, PSENSOR_CONVERSION_TIME_OSR_8192};
+          PSENSOR_CONVERSION_TIME_OSR_4096, PSENSOR_CONVERSION_TIME_OSR_8192
+  };
           
   psensor_conversion_time = new uint32_t[6];
+  
   for(int idx = 0; idx < 6; idx++)
         psensor_conversion_time[idx] = tempArray[idx]; // Copies each value into the tones_freq array
   delete[] tempArray; // free's the memory used by tempArray
@@ -137,6 +141,7 @@ enum MS8607_status MS8607::reset(void)
     enum MS8607_status status;
     
     status = hsensor_reset();
+    
     if( status != MS8607_status_ok)
         return status;
     status = psensor_reset();
@@ -390,7 +395,7 @@ enum MS8607_status MS8607::hsensor_crc_check(uint16_t value, uint8_t crc)
     uint32_t polynom = 0x988000; // x^8 + x^5 + x^4 + 1
     uint32_t msb     = 0x800000;
     uint32_t mask    = 0xFF8000;
-    uint32_t result  = (uint32_t)value<<8; // Pad with zeros as specified in spec
+    uint32_t result  = (uint32_t)value << 8; // Pad with zeros as specified in spec
     
     while( msb != 0x80 ) 
     {
@@ -460,6 +465,7 @@ enum MS8607_status MS8607::hsensor_write_user_register(uint8_t value)
     char tx[2];
     
     status = hsensor_read_user_register(&reg);
+    
     if( status != MS8607_status_ok )
         return status;
     
@@ -490,12 +496,10 @@ enum MS8607_status MS8607::hsensor_write_user_register(uint8_t value)
 enum MS8607_status MS8607::hsensor_humidity_conversion_and_read_adc(uint16_t *adc)
 {
     enum MS8607_status status = MS8607_status_ok;
-    //uint8_t i2c_status;
     uint16_t _adc;
     char tx[1];
     char buffer[3];
     uint8_t crc;
-    //uint8_t i;
     
     buffer[0] = 0;
     buffer[1] = 0;
@@ -631,6 +635,8 @@ enum MS8607_status MS8607::psensor_reset(void)
     tx[0] = PSENSOR_RESET_COMMAND;
 
     i2c_->write((PSENSOR_ADDR << 1) & 0xFE, tx, 1);
+    
+    return MS8607_status_ok;
 }
 
 /**
@@ -658,11 +664,8 @@ void MS8607::set_pressure_resolution(enum MS8607_pressure_resolution res)
  */
 enum MS8607_status MS8607::psensor_read_eeprom_coeff(uint8_t command, uint16_t *coeff)
 {
-    //enum MS8607_status status;
-    //uint8_t i2c_status;
     char tx[1];
     char buffer[2];
-    //uint8_t i;
     
     tx[0] = command;
     buffer[0] = 0;
@@ -724,11 +727,8 @@ enum MS8607_status MS8607::psensor_read_eeprom(void)
  */
 enum MS8607_status MS8607::psensor_conversion_and_read_adc(uint8_t cmd, uint32_t *adc)
 {
-    //enum MS8607_status status;
-    //uint8_t i2c_status;
     char tx[1];
     char buffer[3];
-    //uint8_t i;
     
     tx[0] = cmd;
     buffer[0] = 0;
@@ -796,7 +796,7 @@ enum MS8607_status MS8607::psensor_read_pressure_and_temperature(float *temperat
         return MS8607_status_i2c_transfer_error;
 
     // Difference between actual and reference temperature = D2 - Tref
-    dT = (int32_t)adc_temperature - ( (int32_t)eeprom_coeff[REFERENCE_TEMPERATURE_INDEX] <<8 );
+    dT = (int32_t)adc_temperature - ( (int32_t)eeprom_coeff[REFERENCE_TEMPERATURE_INDEX] << 8 );
     
     // Actual temperature = 2000 + dT * TEMPSENS
     TEMP = 2000 + ((int64_t)dT * (int64_t)eeprom_coeff[TEMP_COEFF_OF_TEMPERATURE_INDEX] >> 23) ;

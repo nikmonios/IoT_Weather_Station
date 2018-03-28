@@ -67,9 +67,9 @@
 #define HTU21_USER_REG_ONCHIP_HEATER_ENABLE 0x04
 #define HTU21_USER_REG_OTP_RELOAD_DISABLE 0x02
 
-uint32_t htu21_temperature_conversion_time = HTU21_TEMPERATURE_CONVERSION_TIME_T_14b_RH_12b;
-uint32_t htu21_humidity_conversion_time = HTU21_HUMIDITY_CONVERSION_TIME_T_14b_RH_12b;
-enum htu21_i2c_master_mode i2c_master_mode;
+uint32_t HTU21_temperature_conversion_time = HTU21_TEMPERATURE_CONVERSION_TIME_T_14b_RH_12b;
+uint32_t HTU21_humidity_conversion_time = HTU21_HUMIDITY_CONVERSION_TIME_T_14b_RH_12b;
+enum HTU21_i2c_master_mode i2c_master_mode;
  
 /**
 * \brief Class constructor
@@ -77,7 +77,7 @@ enum htu21_i2c_master_mode i2c_master_mode;
 */
 HTU21D::HTU21D(PinName sda, PinName scl) 
 {
-  i2c_master_mode = htu21_i2c_no_hold;
+  i2c_master_mode = HTU21_i2c_no_hold;
   i2c_ = new I2C(sda, scl);
   //400KHz, as specified by the datasheet.
   i2c_->frequency(400000);
@@ -89,10 +89,10 @@ HTU21D::HTU21D(PinName sda, PinName scl)
  *        This determines whether the program will hold while ADC is accessed or
  * will wait some time
  *
- * \param[in] htu21_i2c_master_mode : I2C mode
+ * \param[in] HTU21_i2c_master_mode : I2C mode
  *
  */
-void HTU21D::set_i2c_master_mode(enum htu21_i2c_master_mode mode)
+void HTU21D::set_i2c_master_mode(enum HTU21_i2c_master_mode mode)
  {
   i2c_master_mode = mode;
 }
@@ -102,12 +102,12 @@ void HTU21D::set_i2c_master_mode(enum htu21_i2c_master_mode mode)
  *
  * \param[out] uint8_t* : Storage of user register value
  *
- * \return htu21_status : status of HTU21
- *       - htu21_status_ok : I2C transfer completed successfully
- *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
- *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
+ * \return HTU21_status : status of HTU21
+ *       - HTU21_status_ok : I2C transfer completed successfully
+ *       - HTU21_status_i2c_transfer_error : Problem with i2c transfer
+ *       - HTU21_status_no_i2c_acknowledge : I2C did not acknowledge
  */
-enum htu21_status HTU21D::read_user_register(uint8_t *value) 
+enum HTU21_status HTU21D::read_user_register(uint8_t *value) 
 {
   char buffer[1];
   char tx[1];
@@ -121,28 +121,28 @@ enum htu21_status HTU21D::read_user_register(uint8_t *value)
 
   *value = buffer[0];
   
-  return htu21_status_ok;
+  return HTU21_status_ok;
 }
 
 /**
- * \brief Writes the htu21 user register with value
+ * \brief Writes the HTU21 user register with value
  *        Will read and keep the unreserved bits of the register
  *
  * \param[in] uint8_t : Register value to be set.
  *
- * \return htu21_status : status of HTU21
- *       - htu21_status_ok : I2C transfer completed successfully
- *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
- *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
+ * \return HTU21_status : status of HTU21
+ *       - HTU21_status_ok : I2C transfer completed successfully
+ *       - HTU21_status_i2c_transfer_error : Problem with i2c transfer
+ *       - HTU21_status_no_i2c_acknowledge : I2C did not acknowledge
  */
-enum htu21_status HTU21D::write_user_register(uint8_t value)
+enum HTU21_status HTU21D::write_user_register(uint8_t value)
 {
-  enum htu21_status status;
+  enum HTU21_status status;
   uint8_t reg;
   char tx[2];
 
   status = read_user_register(&reg);
-  if (status != htu21_status_ok)
+  if (status != HTU21_status_ok)
     return status;
 
   // Clear bits of reg that are not reserved
@@ -155,35 +155,35 @@ enum htu21_status HTU21D::write_user_register(uint8_t value)
   
   i2c_->write((HTU21_ADDR << 1) & 0xFE, tx, 2);
 
-  return htu21_status_ok;
+  return HTU21_status_ok;
 }
 
 /**
  * \brief Get heater status
  *
- * \param[in] htu21_heater_status* : Return heater status (above or below 2.5V)
- *                      - htu21_heater_off,
- *                      - htu21_heater_on
+ * \param[in] HTU21_heater_status* : Return heater status (above or below 2.5V)
+ *                      - HTU21_heater_off,
+ *                      - HTU21_heater_on
  *
- * \return htu21_status : status of HTU21
- *       - htu21_status_ok : I2C transfer completed successfully
- *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
- *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
+ * \return HTU21_status : status of HTU21
+ *       - HTU21_status_ok : I2C transfer completed successfully
+ *       - HTU21_status_i2c_transfer_error : Problem with i2c transfer
+ *       - HTU21_status_no_i2c_acknowledge : I2C did not acknowledge
  */
-enum htu21_status HTU21D::get_heater_status(enum htu21_heater_status *heater) 
+enum HTU21_status HTU21D::get_heater_status(enum HTU21_heater_status *heater) 
 {
-  enum htu21_status status;
+  enum HTU21_status status;
   uint8_t reg_value;
 
   status = read_user_register(&reg_value);
-  if (status != htu21_status_ok)
+  if (status != HTU21_status_ok)
     return status;
 
   // Get the heater enable bit in reg_value
   if (reg_value & HTU21_USER_REG_ONCHIP_HEATER_ENABLE)
-    *heater = htu21_heater_on;
+    *heater = HTU21_heater_on;
   else
-    *heater = htu21_heater_off;
+    *heater = HTU21_heater_off;
 
   return status;
 }
@@ -191,18 +191,18 @@ enum htu21_status HTU21D::get_heater_status(enum htu21_heater_status *heater)
 /**
  * \brief Enable heater
  *
- * \return htu21_status : status of HTU21
- *       - htu21_status_ok : I2C transfer completed successfully
- *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
- *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
+ * \return HTU21_status : status of HTU21
+ *       - HTU21_status_ok : I2C transfer completed successfully
+ *       - HTU21_status_i2c_transfer_error : Problem with i2c transfer
+ *       - HTU21_status_no_i2c_acknowledge : I2C did not acknowledge
  */
-enum htu21_status HTU21D::enable_heater(void) 
+enum HTU21_status HTU21D::enable_heater(void) 
 {
-  enum htu21_status status;
+  enum HTU21_status status;
   uint8_t reg_value;
 
   status = read_user_register(&reg_value);
-  if (status != htu21_status_ok)
+  if (status != HTU21_status_ok)
     return status;
 
   // Clear the resolution bits
@@ -216,18 +216,18 @@ enum htu21_status HTU21D::enable_heater(void)
 /**
  * \brief Disable heater
  *
- * \return htu21_status : status of HTU21
- *       - htu21_status_ok : I2C transfer completed successfully
- *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
- *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
+ * \return HTU21_status : status of HTU21
+ *       - HTU21_status_ok : I2C transfer completed successfully
+ *       - HTU21_status_i2c_transfer_error : Problem with i2c transfer
+ *       - HTU21_status_no_i2c_acknowledge : I2C did not acknowledge
  */
-enum htu21_status HTU21D::disable_heater(void) 
+enum HTU21_status HTU21D::disable_heater(void) 
 {
-  enum htu21_status status;
+  enum HTU21_status status;
   uint8_t reg_value;
 
   status = read_user_register(&reg_value);
-  if (status != htu21_status_ok)
+  if (status != HTU21_status_ok)
     return status;
 
   // Clear the resolution bits
@@ -241,28 +241,28 @@ enum htu21_status HTU21D::disable_heater(void)
 /**
  * \brief Provide battery status
  *
- * \param[out] htu21_battery_status* : Battery status
- *                      - htu21_battery_ok,
- *                      - htu21_battery_low
+ * \param[out] HTU21_battery_status* : Battery status
+ *                      - HTU21_battery_ok,
+ *                      - HTU21_battery_low
  *
- * \return htu21_status : status of HTU21
- *       - htu21_status_ok : I2C transfer completed successfully
- *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
- *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
+ * \return HTU21_status : status of HTU21
+ *       - HTU21_status_ok : I2C transfer completed successfully
+ *       - HTU21_status_i2c_transfer_error : Problem with i2c transfer
+ *       - HTU21_status_no_i2c_acknowledge : I2C did not acknowledge
  */
-enum htu21_status HTU21D::get_battery_status(enum htu21_battery_status *bat) 
+enum HTU21_status HTU21D::get_battery_status(enum HTU21_battery_status *bat) 
 {
-  enum htu21_status status;
+  enum HTU21_status status;
   uint8_t reg_value;
 
   status = read_user_register(&reg_value);
-  if (status != htu21_status_ok)
+  if (status != HTU21_status_ok)
     return status;
 
   if (reg_value & HTU21_USER_REG_END_OF_BATTERY_VDD_BELOW_2_25V)
-    *bat = htu21_battery_low;
+    *bat = HTU21_battery_low;
   else
-    *bat = htu21_battery_ok;
+    *bat = HTU21_battery_ok;
 
   return status;
 }
@@ -272,12 +272,12 @@ enum htu21_status HTU21D::get_battery_status(enum htu21_battery_status *bat)
  *
  * \param[in] uint8_t : Command value to be written.
  *
- * \return htu21_status : status of HTU21
- *       - htu21_status_ok : I2C transfer completed successfully
- *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
- *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
+ * \return HTU21_status : status of HTU21
+ *       - HTU21_status_ok : I2C transfer completed successfully
+ *       - HTU21_status_i2c_transfer_error : Problem with i2c transfer
+ *       - HTU21_status_no_i2c_acknowledge : I2C did not acknowledge
  */
-enum htu21_status HTU21D::write_command(uint8_t cmd) 
+enum HTU21_status HTU21D::write_command(uint8_t cmd) 
 {
   char tx[1];
   
@@ -285,31 +285,31 @@ enum htu21_status HTU21D::write_command(uint8_t cmd)
   
   i2c_->write((HTU21_ADDR << 1) & 0xFE, tx, 1);
 
-  return htu21_status_ok;
+  return HTU21_status_ok;
 }
 
 /**
  * \brief Reset the HTU21 device
  *
- * \return htu21_status : status of HTU21
- *       - htu21_status_ok : I2C transfer completed successfully
- *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
- *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
+ * \return HTU21_status : status of HTU21
+ *       - HTU21_status_ok : I2C transfer completed successfully
+ *       - HTU21_status_i2c_transfer_error : Problem with i2c transfer
+ *       - HTU21_status_no_i2c_acknowledge : I2C did not acknowledge
  */
-enum htu21_status HTU21D::reset(void) 
+enum HTU21_status HTU21D::reset(void) 
 {
-  enum htu21_status status;
+  enum HTU21_status status;
 
   status = write_command(HTU21_RESET_COMMAND);
-  if (status != htu21_status_ok)
+  if (status != HTU21_status_ok)
     return status;
 
-  htu21_temperature_conversion_time = HTU21_TEMPERATURE_CONVERSION_TIME_T_14b_RH_12b;
-  htu21_humidity_conversion_time = HTU21_HUMIDITY_CONVERSION_TIME_T_14b_RH_12b;
+  HTU21_temperature_conversion_time = HTU21_TEMPERATURE_CONVERSION_TIME_T_14b_RH_12b;
+  HTU21_humidity_conversion_time = HTU21_HUMIDITY_CONVERSION_TIME_T_14b_RH_12b;
 
   wait_ms(RESET_TIME);
 
-  return htu21_status_ok;
+  return HTU21_status_ok;
 }
 
 /**
@@ -318,11 +318,11 @@ enum htu21_status HTU21D::reset(void)
  * \param[in] uint16_t : variable on which to check CRC
  * \param[in] uint8_t : CRC value
  *
- * \return htu21_status : status of HTU21
- *       - htu21_status_ok : CRC check is OK
- *       - htu21_status_crc_error : CRC check error
+ * \return HTU21_status : status of HTU21
+ *       - HTU21_status_ok : CRC check is OK
+ *       - HTU21_status_crc_error : CRC check error
  */
-enum htu21_status HTU21D::crc_check(uint16_t value, uint8_t crc) 
+enum HTU21_status HTU21D::crc_check(uint16_t value, uint8_t crc) 
 {
   uint32_t polynom = 0x988000; // x^8 + x^5 + x^4 + 1
   uint32_t msb = 0x800000;
@@ -342,9 +342,9 @@ enum htu21_status HTU21D::crc_check(uint16_t value, uint8_t crc)
     polynom >>= 1;
   }
   if (result == crc)
-    return htu21_status_ok;
+    return HTU21_status_ok;
   else
-    return htu21_status_crc_error;
+    return HTU21_status_crc_error;
 }
 
 /**
@@ -352,15 +352,15 @@ enum htu21_status HTU21D::crc_check(uint16_t value, uint8_t crc)
  *
  * \param[out] uint16_t* : Temperature ADC value.
  *
- * \return htu21_status : status of HTU21
- *       - htu21_status_ok : I2C transfer completed successfully
- *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
- *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
- *       - htu21_status_crc_error : CRC check error
+ * \return HTU21_status : status of HTU21
+ *       - HTU21_status_ok : I2C transfer completed successfully
+ *       - HTU21_status_i2c_transfer_error : Problem with i2c transfer
+ *       - HTU21_status_no_i2c_acknowledge : I2C did not acknowledge
+ *       - HTU21_status_crc_error : CRC check error
  */
-enum htu21_status HTU21D::temperature_conversion_and_read_adc(uint16_t *adc) 
+enum HTU21_status HTU21D::temperature_conversion_and_read_adc(uint16_t *adc) 
 {
-  enum htu21_status status = htu21_status_ok;
+  enum HTU21_status status = HTU21_status_ok;
 
   uint8_t i2c_status;
   uint16_t _adc;
@@ -368,7 +368,7 @@ enum htu21_status HTU21D::temperature_conversion_and_read_adc(uint16_t *adc)
   char tx[1];
 
   /* Command */
-  if (i2c_master_mode == htu21_i2c_hold) 
+  if (i2c_master_mode == HTU21_i2c_hold) 
   {
     tx[0] = HTU21_READ_TEMPERATURE_W_HOLD_COMMAND;
     i2c_->write((HTU21_ADDR << 1) & 0xFE, tx, 1);
@@ -387,7 +387,7 @@ enum htu21_status HTU21D::temperature_conversion_and_read_adc(uint16_t *adc)
 
   // compute CRC
   status = crc_check(_adc, buffer[2]);
-  if (status != htu21_status_ok)
+  if (status != HTU21_status_ok)
     return status;
 
   *adc = _adc;
@@ -400,23 +400,23 @@ enum htu21_status HTU21D::temperature_conversion_and_read_adc(uint16_t *adc)
  *
  * \param[out] uint16_t* : Relative humidity ADC value.
  *
- * \return htu21_status : status of HTU21
- *       - htu21_status_ok : I2C transfer completed successfully
- *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
- *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
- *       - htu21_status_crc_error : CRC check error
+ * \return HTU21_status : status of HTU21
+ *       - HTU21_status_ok : I2C transfer completed successfully
+ *       - HTU21_status_i2c_transfer_error : Problem with i2c transfer
+ *       - HTU21_status_no_i2c_acknowledge : I2C did not acknowledge
+ *       - HTU21_status_crc_error : CRC check error
  */
-enum htu21_status HTU21D::humidity_conversion_and_read_adc(uint16_t *adc) 
+enum HTU21_status HTU21D::humidity_conversion_and_read_adc(uint16_t *adc) 
 {
-  enum htu21_status status = htu21_status_ok;
-  enum htu21_i2c_master_mode mode;
+  enum HTU21_status status = HTU21_status_ok;
+  enum HTU21_i2c_master_mode mode;
   uint8_t i2c_status;
   uint16_t _adc;
   char buffer[3];
   char tx[1];
 
   /* Read data */
-  if (i2c_master_mode == htu21_i2c_hold) 
+  if (i2c_master_mode == HTU21_i2c_hold) 
   {
     tx[0] = HTU21_READ_HUMIDITY_W_HOLD_COMMAND;
     i2c_->write((HTU21_ADDR << 1) & 0xFE, tx, 1);
@@ -432,7 +432,7 @@ enum htu21_status HTU21D::humidity_conversion_and_read_adc(uint16_t *adc)
 
   _adc = (buffer[0] << 8) | buffer[1];
   // compute CRC
-  if (status != htu21_status_ok)
+  if (status != HTU21_status_ok)
     return status;
   *adc = _adc;
 
@@ -445,26 +445,26 @@ enum htu21_status HTU21D::humidity_conversion_and_read_adc(uint16_t *adc)
  * \param[out] float* : Celsius Degree temperature value
  * \param[out] float* : %RH Relative Humidity value
  *
- * \return htu21_status : status of HTU21
- *       - htu21_status_ok : I2C transfer completed successfully
- *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
- *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
- *       - htu21_status_crc_error : CRC check error
+ * \return HTU21_status : status of HTU21
+ *       - HTU21_status_ok : I2C transfer completed successfully
+ *       - HTU21_status_i2c_transfer_error : Problem with i2c transfer
+ *       - HTU21_status_no_i2c_acknowledge : I2C did not acknowledge
+ *       - HTU21_status_crc_error : CRC check error
  */
-enum htu21_status HTU21D::read_temperature_and_relative_humidity(float *temperature, float *humidity) 
+enum HTU21_status HTU21D::read_temperature_and_relative_humidity(float *temperature, float *humidity) 
 {
-  enum htu21_status status;
+  enum HTU21_status status;
   uint16_t adc;
 
   status = temperature_conversion_and_read_adc(&adc);
-  if (status != htu21_status_ok)
+  if (status != HTU21_status_ok)
     return status;
 
   // Perform conversion function
   *temperature = (float)adc * TEMPERATURE_COEFF_MUL / (1UL << 16) + TEMPERATURE_COEFF_ADD;
 
   status = humidity_conversion_and_read_adc(&adc);
-  if (status != htu21_status_ok)
+  if (status != HTU21_status_ok)
     return status;
 
   // Perform conversion function
@@ -476,40 +476,40 @@ enum htu21_status HTU21D::read_temperature_and_relative_humidity(float *temperat
 /**
  * \brief Set temperature & humidity ADC resolution.
  *
- * \param[in] htu21_resolution : Resolution requested
+ * \param[in] HTU21_resolution : Resolution requested
  *
- * \return htu21_status : status of HTU21
- *       - htu21_status_ok : I2C transfer completed successfully
- *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
- *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
- *       - htu21_status_crc_error : CRC check error
+ * \return HTU21_status : status of HTU21
+ *       - HTU21_status_ok : I2C transfer completed successfully
+ *       - HTU21_status_i2c_transfer_error : Problem with i2c transfer
+ *       - HTU21_status_no_i2c_acknowledge : I2C did not acknowledge
+ *       - HTU21_status_crc_error : CRC check error
  */
-enum htu21_status HTU21D::set_resolution(enum htu21_resolution res) 
+enum HTU21_status HTU21D::set_resolution(enum HTU21_resolution res) 
 {
-  enum htu21_status status;
+  enum HTU21_status status;
   uint8_t reg_value, tmp = 0;
   uint32_t temperature_conversion_time = HTU21_TEMPERATURE_CONVERSION_TIME_T_14b_RH_12b;
   uint32_t humidity_conversion_time = HTU21_HUMIDITY_CONVERSION_TIME_T_14b_RH_12b;
 
-  if (res == htu21_resolution_t_14b_rh_12b) 
+  if (res == HTU21_resolution_t_14b_rh_12b) 
   {
     tmp = HTU21_USER_REG_RESOLUTION_T_14b_RH_12b;
     temperature_conversion_time = HTU21_TEMPERATURE_CONVERSION_TIME_T_14b_RH_12b;
     humidity_conversion_time = HTU21_HUMIDITY_CONVERSION_TIME_T_14b_RH_12b;
   } 
-  else if (res == htu21_resolution_t_13b_rh_10b) 
+  else if (res == HTU21_resolution_t_13b_rh_10b) 
   {
     tmp = HTU21_USER_REG_RESOLUTION_T_13b_RH_10b;
     temperature_conversion_time = HTU21_TEMPERATURE_CONVERSION_TIME_T_13b_RH_10b;
     humidity_conversion_time = HTU21_HUMIDITY_CONVERSION_TIME_T_13b_RH_10b;
   } 
-  else if (res == htu21_resolution_t_12b_rh_8b) 
+  else if (res == HTU21_resolution_t_12b_rh_8b) 
   {
     tmp = HTU21_USER_REG_RESOLUTION_T_12b_RH_8b;
     temperature_conversion_time = HTU21_TEMPERATURE_CONVERSION_TIME_T_12b_RH_8b;
     humidity_conversion_time = HTU21_HUMIDITY_CONVERSION_TIME_T_12b_RH_8b;
   } 
-  else if (res == htu21_resolution_t_11b_rh_11b) 
+  else if (res == HTU21_resolution_t_11b_rh_11b) 
   {
     tmp = HTU21_USER_REG_RESOLUTION_T_11b_RH_11b;
     temperature_conversion_time = HTU21_TEMPERATURE_CONVERSION_TIME_T_11b_RH_11b;
@@ -517,15 +517,15 @@ enum htu21_status HTU21D::set_resolution(enum htu21_resolution res)
   }
 
   status = read_user_register(&reg_value);
-  if (status != htu21_status_ok)
+  if (status != HTU21_status_ok)
     return status;
 
   // Clear the resolution bits
   reg_value &= ~HTU21_USER_REG_RESOLUTION_MASK;
   reg_value |= tmp & HTU21_USER_REG_RESOLUTION_MASK;
 
-  htu21_temperature_conversion_time = temperature_conversion_time;
-  htu21_humidity_conversion_time = humidity_conversion_time;
+  HTU21_temperature_conversion_time = temperature_conversion_time;
+  HTU21_humidity_conversion_time = humidity_conversion_time;
 
   status = write_user_register(reg_value);
 
@@ -567,20 +567,20 @@ float HTU21D::compute_dew_point(float temperature, float relative_humidity)
 }
 
 /**
- * \brief Reads the htu21 serial number.
+ * \brief Reads the HTU21 serial number.
  *
  * \param[out] uint64_t* : Serial number
  *
- * \return htu21_status : status of HTU21
- *       - htu21_status_ok : I2C transfer completed successfully
- *       - htu21_status_i2c_transfer_error : Problem with i2c transfer
- *       - htu21_status_no_i2c_acknowledge : I2C did not acknowledge
- *       - htu21_status_crc_error : CRC check error
+ * \return HTU21_status : status of HTU21
+ *       - HTU21_status_ok : I2C transfer completed successfully
+ *       - HTU21_status_i2c_transfer_error : Problem with i2c transfer
+ *       - HTU21_status_no_i2c_acknowledge : I2C did not acknowledge
+ *       - HTU21_status_crc_error : CRC check error
  */
-enum htu21_status HTU21D::read_serial_number(uint64_t *serial_number) 
+enum HTU21_status HTU21D::read_serial_number(uint64_t *serial_number) 
 {
-  enum htu21_status status;
-  enum htu21_status_code i2c_status;
+  enum HTU21_status status;
+  enum HTU21_status_code i2c_status;
   char rcv_data[14];
   char first_data[8];
   char second_data[6];
@@ -617,5 +617,5 @@ enum htu21_status HTU21D::read_serial_number(uint64_t *serial_number)
       ((uint64_t)rcv_data[8] << 24) | ((uint64_t)rcv_data[9] << 16) |
       ((uint64_t)rcv_data[12] << 8) | ((uint64_t)rcv_data[11] << 0);
 
-  return htu21_status_ok;
+  return HTU21_status_ok;
 }

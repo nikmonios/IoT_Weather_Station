@@ -18,7 +18,7 @@
 #define TSYS01_CONVERSION_TIME 10
 
 // function
-tsys01::tsys01(PinName sda, PinName scl)
+TSYS01::TSYS01(PinName sda, PinName scl)
 {
   i2c_ = new I2C(sda, scl);
   //400KHz, as specified by the datasheet.
@@ -28,15 +28,15 @@ tsys01::tsys01(PinName sda, PinName scl)
   for(int idx = 0; idx < 5; idx++)
         coeff_mul[idx] = tempArray[idx]; // Copies each value into the tones_freq array
     delete[] tempArray; // free's the memory used by tempArray
-  tsys01_coeff_read = false;
+  TSYS01_coeff_read = false;
 }
 
 /**
  * \brief Perform initial configuration. Has to be called once.
  */
-void tsys01::begin(void)
+void TSYS01::begin(void)
 { 
-    tsys01_i2c_address = TSYS01_ADDR_CSB_0;
+    TSYS01_i2c_address = TSYS01_ADDR_CSB_0;
 }
 
 /**
@@ -45,12 +45,12 @@ void tsys01::begin(void)
  * \param[in] address : TSYS01 I2C address
  *
  */
-void tsys01::set_address(enum tsys01_address address) 
+void TSYS01::set_address(enum TSYS01_address address) 
 {
-  if (address == tsys01_i2c_address_csb_1)
-    tsys01_i2c_address = TSYS01_ADDR_CSB_1;
+  if (address == TSYS01_i2c_address_csb_1)
+    TSYS01_i2c_address = TSYS01_ADDR_CSB_1;
   else
-    tsys01_i2c_address = TSYS01_ADDR_CSB_0;
+    TSYS01_i2c_address = TSYS01_ADDR_CSB_0;
 }
 
 
@@ -59,48 +59,55 @@ void tsys01::set_address(enum tsys01_address address)
  *
  * \param[in] uint8_t : Command value to be written.
  *
- * \return tsys01_status : status of TSYS01
- *       - tsys01_status_ok : I2C transfer completed successfully
- *       - tsys01_status_i2c_transfer_error : Problem with i2c transfer
- *       - tsys01_status_no_i2c_acknowledge : I2C did not acknowledge
+ * \return TSYS01_status : status of TSYS01
+ *       - TSYS01_status_ok : I2C transfer completed successfully
+ *       - TSYS01_status_i2c_transfer_error : Problem with i2c transfer
+ *       - TSYS01_status_no_i2c_acknowledge : I2C did not acknowledge
  */
-enum tsys01_status tsys01::write_command(uint8_t cmd) 
+enum TSYS01_status TSYS01::write_command(uint8_t cmd) 
 {
   uint8_t i2c_status;
   char tx[1];
   
   tx[0] = cmd;
-  
-  i2c_->write((tsys01_i2c_address << 1) & 0xFE, tx, 1);
 
-  return tsys01_status_ok;
+  i2c_->write((TSYS01_i2c_address << 1) & 0xFE, tx, 1);
+  
+  i2c_status = TSYS01_status_ok;
+
+  if (i2c_status == TSYS01_STATUS_ERR_OVERFLOW)
+    return TSYS01_status_no_i2c_acknowledge;
+  if (i2c_status != TSYS01_STATUS_OK)
+    return TSYS01_status_i2c_transfer_error;
+
+  return TSYS01_status_ok;
 }
 
 /**
  * \brief Reset the TSYS01 device
  *
- * \return tsys01_status : status of TSYS01
- *       - tsys01_status_ok : I2C transfer completed successfully
- *       - tsys01_status_i2c_transfer_error : Problem with i2c transfer
- *       - tsys01_status_no_i2c_acknowledge : I2C did not acknowledge
+ * \return TSYS01_status : status of TSYS01
+ *       - TSYS01_status_ok : I2C transfer completed successfully
+ *       - TSYS01_status_i2c_transfer_error : Problem with i2c transfer
+ *       - TSYS01_status_no_i2c_acknowledge : I2C did not acknowledge
  */
-enum tsys01_status tsys01::reset(void) 
+enum TSYS01_status TSYS01::reset(void) 
 {
   return write_command(TSYS01_RESET_COMMAND);
 }
 
 /**
- * \brief Reads the tsys01 EEPROM coefficient stored at address provided.
+ * \brief Reads the TSYS01 EEPROM coefficient stored at address provided.
  *
  * \param[in] uint8_t : Address of coefficient in EEPROM
  * \param[out] uint16_t* : Value read in EEPROM
  *
- * \return tsys01_status : status of TSYS01
- *       - tsys01_status_ok : I2C transfer completed successfully
- *       - tsys01_status_i2c_transfer_error : Problem with i2c transfer
- *       - tsys01_status_no_i2c_acknowledge : I2C did not acknowledge
+ * \return TSYS01_status : status of TSYS01
+ *       - TSYS01_status_ok : I2C transfer completed successfully
+ *       - TSYS01_status_i2c_transfer_error : Problem with i2c transfer
+ *       - TSYS01_status_no_i2c_acknowledge : I2C did not acknowledge
  */
-enum tsys01_status tsys01::read_eeprom_coeff(uint8_t command, uint16_t *coeff) 
+enum TSYS01_status TSYS01::read_eeprom_coeff(uint8_t command, uint16_t *coeff) 
 {
   uint8_t i2c_status;
   char tx[1];
@@ -108,45 +115,53 @@ enum tsys01_status tsys01::read_eeprom_coeff(uint8_t command, uint16_t *coeff)
 
   tx[0] = command;
   
-  i2c_->write((tsys01_i2c_address << 1) & 0xFE, tx, 1);
+  i2c_->write((TSYS01_i2c_address << 1) & 0xFE, tx, 1);
+  i2c_status = TSYS01_status_ok;
   
-  i2c_->read((tsys01_i2c_address << 1) | 0x01, rx, 2);
+  i2c_->read((TSYS01_i2c_address << 1) | 0x01, rx, 2);
   wait_ms(1);
+
+  // Send the conversion command
+
+  if (i2c_status == TSYS01_STATUS_ERR_OVERFLOW)
+    return TSYS01_status_no_i2c_acknowledge;
+  if (i2c_status != TSYS01_STATUS_OK)
+    return TSYS01_status_i2c_transfer_error;
 
   *coeff = (rx[0] << 8) | rx[1];
 
-  return tsys01_status_ok;
+  return TSYS01_status_ok;
 }
 
 /**
- * \brief Reads the tsys01 EEPROM coefficients to store them for computation.
+ * \brief Reads the TSYS01 EEPROM coefficients to store them for computation.
  *
- * \return tsys01_status : status of TSYS01
- *       - tsys01_status_ok : I2C transfer completed successfully
- *       - tsys01_status_i2c_transfer_error : Problem with i2c transfer
- *       - tsys01_status_no_i2c_acknowledge : I2C did not acknowledge
- *       - tsys01_status_crc_error : CRC error on PROM coefficients
+ * \return TSYS01_status : status of TSYS01
+ *       - TSYS01_status_ok : I2C transfer completed successfully
+ *       - TSYS01_status_i2c_transfer_error : Problem with i2c transfer
+ *       - TSYS01_status_no_i2c_acknowledge : I2C did not acknowledge
+ *       - TSYS01_status_crc_error : CRC error on PROM coefficients
  */
-enum tsys01_status tsys01::read_eeprom(void) 
+enum TSYS01_status TSYS01::read_eeprom(void) 
 {
-  enum tsys01_status status;
+  enum TSYS01_status status;
   uint8_t i;
 
   // Read all coefficients from EEPROM
   for (i = 0; i < PROM_ELEMENTS_NUMBER; i++) 
   {
     status = read_eeprom_coeff(PROM_ADDRESS_READ_ADDRESS_0 + i * 2, eeprom_coeff + i);
-    if (status != tsys01_status_ok)
+    if (status != TSYS01_status_ok)
       return status;
   }
 
   // CRC check
   if (crc_check(eeprom_coeff))
-    return tsys01_status_crc_error;
+    return TSYS01_status_crc_error;
 
-  tsys01_coeff_read = true;
+  TSYS01_coeff_read = true;
 
-  return tsys01_status_ok;
+  return TSYS01_status_ok;
 }
 
 /**
@@ -156,7 +171,7 @@ enum tsys01_status tsys01::read_eeprom(void)
  *
  * \return bool : TRUE if CRC is OK, FALSE if KO
  */
-bool tsys01::crc_check(uint16_t *n_prom) 
+bool TSYS01::crc_check(uint16_t *n_prom) 
 {
   uint8_t cnt;
   uint16_t sum = 0;
@@ -173,37 +188,37 @@ bool tsys01::crc_check(uint16_t *n_prom)
  *
  * \param[out] uint32_t* : Temperature ADC value.
  *
- * \return tsys01_status : status of TSYS01
- *       - tsys01_status_ok : I2C transfer completed successfully
- *       - tsys01_status_i2c_transfer_error : Problem with i2c transfer
- *       - tsys01_status_no_i2c_acknowledge : I2C did not acknowledge
- *       - tsys01_status_crc_error : CRC error on PROM coefficients
+ * \return TSYS01_status : status of TSYS01
+ *       - TSYS01_status_ok : I2C transfer completed successfully
+ *       - TSYS01_status_i2c_transfer_error : Problem with i2c transfer
+ *       - TSYS01_status_no_i2c_acknowledge : I2C did not acknowledge
+ *       - TSYS01_status_crc_error : CRC error on PROM coefficients
  */
-enum tsys01_status tsys01::conversion_and_read_adc(uint32_t *adc) 
+enum TSYS01_status TSYS01::conversion_and_read_adc(uint32_t *adc) 
 {
-  enum tsys01_status i2c_status;
+  enum TSYS01_status i2c_status;
   char tx[1];
   char rx[3];
 
   /* Read data */
   tx[0] = TSYS01_START_ADC_CONVERSION;
-  i2c_->write((tsys01_i2c_address << 1) & 0xFE, tx, 1);
+  i2c_->write((TSYS01_i2c_address << 1) & 0xFE, tx, 1);
   // Wait for conversion
   wait_ms(TSYS01_CONVERSION_TIME);
 
   // Read ADC
   tx[0] = TSYS01_READ_ADC_TEMPERATURE;
-  i2c_->write((tsys01_i2c_address << 1) & 0xFE, tx, 1);
-  i2c_->read((tsys01_i2c_address << 1) | 0x01, rx, 3);
+  i2c_->write((TSYS01_i2c_address << 1) & 0xFE, tx, 1);
+  i2c_->read((TSYS01_i2c_address << 1) | 0x01, rx, 3);
 
-  i2c_status = tsys01_status_ok;
+  i2c_status = TSYS01_status_ok;
   
   
-  if (i2c_status != tsys01_status_ok)
+  if (i2c_status != TSYS01_status_ok)
     return i2c_status;
 
   // Send the read command
-  if (i2c_status != tsys01_status_ok)
+  if (i2c_status != TSYS01_status_ok)
     return i2c_status;
 
   *adc = ((uint32_t)rx[0] << 16) | ((uint32_t)rx[1] << 8) | (uint32_t)rx[2];
@@ -232,35 +247,35 @@ enum tsys01_status tsys01::conversion_and_read_adc(uint32_t *adc)
  *
  * \param[out] float* : Celsius Degree temperature value
  *
- * \return tsys01_status : status of TSYS01
- *       - tsys01_status_ok : I2C transfer completed successfully
- *       - tsys01_status_i2c_transfer_error : Problem with i2c transfer
- *       - tsys01_status_no_i2c_acknowledge : I2C did not acknowledge
- *       - tsys01_status_crc_error : CRC error on PROM coefficients
+ * \return TSYS01_status : status of TSYS01
+ *       - TSYS01_status_ok : I2C transfer completed successfully
+ *       - TSYS01_status_i2c_transfer_error : Problem with i2c transfer
+ *       - TSYS01_status_no_i2c_acknowledge : I2C did not acknowledge
+ *       - TSYS01_status_crc_error : CRC error on PROM coefficients
  */
 
-enum tsys01_status tsys01::read_temperature(float *temperature) 
+enum TSYS01_status TSYS01::read_temperature(float *temperature) 
 {
-  enum tsys01_status status = tsys01_status_ok;
+  enum TSYS01_status status = TSYS01_status_ok;
   uint32_t adc;
   uint8_t i;
   float temp = 0;
 
   // If first time temperature is requested, get EEPROM coefficients
-  if (tsys01_coeff_read == false)
+  if (TSYS01_coeff_read == false)
     status = read_eeprom();
-  if (status != tsys01_status_ok)
+  if (status != TSYS01_status_ok)
     return status;
 
   status = conversion_and_read_adc(&adc);
-  if (status != tsys01_status_ok)
+  if (status != TSYS01_status_ok)
     return status;
 
   adc /= 256;
 
-  for (i = 4; i > 0; i--) {
-    temp += coeff_mul[i] *
-            eeprom_coeff[1 + (4 - i)]; // eeprom_coeff[1+(4-i)] equiv. ki
+  for (i = 4; i > 0; i--) 
+  {
+    temp += coeff_mul[i] * eeprom_coeff[1 + (4 - i)]; // eeprom_coeff[1+(4-i)] equiv. ki
     temp *= (float)adc / 100000;
   }
   temp *= 10;

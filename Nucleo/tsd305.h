@@ -1,30 +1,25 @@
-/*#if defined(ARDUINO) && ARDUINO >= 100
-#include "Arduino.h"
-#else
-#include "WProgram.h"
-#endif*/
-#include "Energia.h"
+#ifndef TSD305_H
+#define TSD305_H
+ 
+#include "mbed.h"
 
-enum tsd305_status 
+
+enum TSD305_status 
 {
-  tsd305_status_ok,
-  tsd305_status_no_i2c_acknowledge,
-  tsd305_status_i2c_transfer_error,
-  tsd305_status_busy,
-  tsd305_status_memory_error,
-  tsd305_status_out_of_range
+  TSD305_status_ok,
+  TSD305_status_no_i2c_acknowledge,
+  TSD305_status_i2c_transfer_error,
+  TSD305_status_busy,
+  TSD305_status_memory_error,
+  TSD305_status_out_of_range
 };
 
-class tsd305 
+class TSD305 
 {
 public:
   // Functions
-  tsd305();
+  TSD305(PinName sda, PinName scl);
 
-  /**
-   * \brief Perform initial configuration. Has to be called once.
-   */
-  void begin();
 
   /**
   * \brief Check whether TSD305 device is connected
@@ -49,7 +44,7 @@ public:
    *       - tsd305_status_busy : Sensor is busy
    *       - tsd305_status_memory_error : Sensor EEPROM memory error
    */
-  enum tsd305_status
+  enum TSD305_status
   read_temperature_and_object_temperature(float *temperature, float *object_temperature);
 
 private:
@@ -66,7 +61,7 @@ private:
    *       - tsd305_status_memory_error : Sensor EEPROM memory error
    */
 
-  enum tsd305_status read_eeprom_coeff(uint8_t address, uint16_t *coeff);
+  enum TSD305_status read_eeprom_coeff(uint8_t address, uint16_t *coeff);
   /**
    * \brief Reads the tsd305 EEPROM coefficient stored at address provided.
    *
@@ -80,7 +75,7 @@ private:
    *       - tsd305_status_memory_error : Sensor EEPROM memory error
    */
 
-  enum tsd305_status read_eeprom_float(uint8_t address, float *value);
+  enum TSD305_status read_eeprom_float(uint8_t address, float *value);
   /**
    * \brief Triggers conversion and read ADC value
    *
@@ -96,7 +91,7 @@ private:
    *       - tsd305_status_memory_error : Sensor EEPROM memory error
    */
 
-  enum tsd305_status conversion_and_read_adcs(uint32_t *adc_object, uint32_t *adc_ambient);
+  enum TSD305_status conversion_and_read_adcs(uint32_t *adc_object, uint32_t *adc_ambient);
   /**
    * \brief Reads the tsd305 EEPROM coefficients to store them for computation.
    *
@@ -107,7 +102,7 @@ private:
    *       - tsd305_status_busy : Sensor is busy
    *       - tsd305_status_memory_error : Sensor EEPROM memory error
    */
-  enum tsd305_status read_eeprom(void);
+  enum TSD305_status read_eeprom(void);
 
   /**
    * \brief Retrieve data from 2D look up table in program memory
@@ -116,7 +111,8 @@ private:
    */
   int32_t get_lut_at(uint8_t x, uint8_t y);
 
-  bool tsd305_coeff_read;
+  bool TSD305_coeff_read;
+  
   struct 
   {
     uint16_t lot_number;
@@ -130,4 +126,9 @@ private:
     int16_t adc_calibration_factor;
 
   } eeprom_coeff;
+  
+  I2C* i2c_;
 };
+
+
+#endif

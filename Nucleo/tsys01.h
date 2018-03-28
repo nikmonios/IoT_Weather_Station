@@ -15,34 +15,34 @@
 #define COEFF_MUL_4 (float)(-2)
 
 // enum
-enum tsys01_status_code 
+enum TSYS01_status_code 
 {
-  tsys01_STATUS_OK = 0x00,
-  tsys01_STATUS_ERR_OVERFLOW = 0x01,
-  tsys01_STATUS_ERR_TIMEOUT = 0x02,
+  TSYS01_STATUS_OK = 0x00,
+  TSYS01_STATUS_ERR_OVERFLOW = 0x01,
+  TSYS01_STATUS_ERR_TIMEOUT = 0x02,
 };
-enum tsys01_address { tsys01_i2c_address_csb_1, tsys01_i2c_address_csb_0 };
+enum TSYS01_address { TSYS01_i2c_address_csb_1, TSYS01_i2c_address_csb_0 };
 
-enum tsys01_status 
+enum TSYS01_status 
 {
-  tsys01_status_ok,
-  tsys01_status_no_i2c_acknowledge,
-  tsys01_status_i2c_transfer_error,
-  tsys01_status_crc_error
+  TSYS01_status_ok,
+  TSYS01_status_no_i2c_acknowledge,
+  TSYS01_status_i2c_transfer_error,
+  TSYS01_status_crc_error
 };
 
-class tsys01 
+class TSYS01 
 {
 
 public:
-  tsys01(PinName sda, PinName scl);
+  TSYS01(PinName sda, PinName scl);
 
   /**
    * \brief Perform initial configuration. Has to be called once.
    */
   void begin();
   /*{
-      tsys01_i2c_address = TSYS01_ADDR_CSB_0;
+      TSYS01_i2c_address = TSYS01_ADDR_CSB_0;
   };*/
 
 
@@ -53,57 +53,57 @@ public:
    * \param[in] address : TSYS01 I2C address
    *
    */
-  void set_address(enum tsys01_address address);
+  void set_address(enum TSYS01_address address);
 
   /**
    * \brief Reset the TSYS01 device
    *
-   * \return tsys01_status : status of TSYS01
-   *       - tsys01_status_ok : I2C transfer completed successfully
-   *       - tsys01_status_i2c_transfer_error : Problem with i2c transfer
-   *       - tsys01_status_no_i2c_acknowledge : I2C did not acknowledge
+   * \return TSYS01_status : status of TSYS01
+   *       - TSYS01_status_ok : I2C transfer completed successfully
+   *       - TSYS01_status_i2c_transfer_error : Problem with i2c transfer
+   *       - TSYS01_status_no_i2c_acknowledge : I2C did not acknowledge
    */
-  enum tsys01_status reset(void);
+  enum TSYS01_status reset(void);
 
   /**
    * \brief Reads the temperature ADC value
    *
    * \param[out] uint32_t* : Temperature ADC value.
    *
-   * \return tsys01_status : status of TSYS01
-   *       - tsys01_status_ok : I2C transfer completed successfully
-   *       - tsys01_status_i2c_transfer_error : Problem with i2c transfer
-   *       - tsys01_status_no_i2c_acknowledge : I2C did not acknowledge
-   *       - tsys01_status_crc_error : CRC error on PROM coefficients
+   * \return TSYS01_status : status of TSYS01
+   *       - TSYS01_status_ok : I2C transfer completed successfully
+   *       - TSYS01_status_i2c_transfer_error : Problem with i2c transfer
+   *       - TSYS01_status_no_i2c_acknowledge : I2C did not acknowledge
+   *       - TSYS01_status_crc_error : CRC error on PROM coefficients
    */
-  enum tsys01_status read_temperature(float *temperature);
+  enum TSYS01_status read_temperature(float *temperature);
 
 private:
   /**
-   * \brief Reads the tsys01 EEPROM coefficient stored at address provided.
+   * \brief Reads the TSYS01 EEPROM coefficient stored at address provided.
    *
    * \param[in] uint8_t : Address of coefficient in EEPROM
    * \param[out] uint16_t* : Value read in EEPROM
    *
-   * \return tsys01_status : status of TSYS01
-   *       - tsys01_status_ok : I2C transfer completed successfully
-   *       - tsys01_status_i2c_transfer_error : Problem with i2c transfer
-   *       - tsys01_status_no_i2c_acknowledge : I2C did not acknowledge
+   * \return TSYS01_status : status of TSYS01
+   *       - TSYS01_status_ok : I2C transfer completed successfully
+   *       - TSYS01_status_i2c_transfer_error : Problem with i2c transfer
+   *       - TSYS01_status_no_i2c_acknowledge : I2C did not acknowledge
    */
-  enum tsys01_status read_eeprom_coeff(uint8_t command, uint16_t *coeff);
+  enum TSYS01_status read_eeprom_coeff(uint8_t command, uint16_t *coeff);
 
   /**
-   * \brief Reads the tsys01 EEPROM coefficient stored at address provided.
+   * \brief Reads the TSYS01 EEPROM coefficient stored at address provided.
    *
    * \param[in] uint8_t : Address of coefficient in EEPROM
    * \param[out] uint16_t* : Value read in EEPROM
    *
-   * \return tsys01_status : status of TSYS01
-   *       - tsys01_status_ok : I2C transfer completed successfully
-   *       - tsys01_status_i2c_transfer_error : Problem with i2c transfer
-   *       - tsys01_status_no_i2c_acknowledge : I2C did not acknowledge
+   * \return TSYS01_status : status of TSYS01
+   *       - TSYS01_status_ok : I2C transfer completed successfully
+   *       - TSYS01_status_i2c_transfer_error : Problem with i2c transfer
+   *       - TSYS01_status_no_i2c_acknowledge : I2C did not acknowledge
    */
-  enum tsys01_status read_eeprom(void);
+  enum TSYS01_status read_eeprom(void);
 
   /**
    * \brief CRC check
@@ -135,33 +135,33 @@ private:
    *
    * \param[out] float* : Celsius Degree temperature value
    *
-   * \return tsys01_status : status of TSYS01
-   *       - tsys01_status_ok : I2C transfer completed successfully
-   *       - tsys01_status_i2c_transfer_error : Problem with i2c transfer
-   *       - tsys01_status_no_i2c_acknowledge : I2C did not acknowledge
-   *       - tsys01_status_crc_error : CRC error on PROM coefficients
+   * \return TSYS01_status : status of TSYS01
+   *       - TSYS01_status_ok : I2C transfer completed successfully
+   *       - TSYS01_status_i2c_transfer_error : Problem with i2c transfer
+   *       - TSYS01_status_no_i2c_acknowledge : I2C did not acknowledge
+   *       - TSYS01_status_crc_error : CRC error on PROM coefficients
    */
-  enum tsys01_status conversion_and_read_adc(uint32_t *adc);
+  enum TSYS01_status conversion_and_read_adc(uint32_t *adc);
 
   /**
 * \brief Writes the TSYS01 8-bits command with the value passed
 *
 * \param[in] uint8_t : Command value to be written.
 *
-* \return tsys01_status : status of TSYS01
-*       - tsys01_status_ok : I2C transfer completed successfully
-*       - tsys01_status_i2c_transfer_error : Problem with i2c transfer
-*       - tsys01_status_no_i2c_acknowledge : I2C did not acknowledge
+* \return TSYS01_status : status of TSYS01
+*       - TSYS01_status_ok : I2C transfer completed successfully
+*       - TSYS01_status_i2c_transfer_error : Problem with i2c transfer
+*       - TSYS01_status_no_i2c_acknowledge : I2C did not acknowledge
 */
-  enum tsys01_status write_command(uint8_t cmd);
+  enum TSYS01_status write_command(uint8_t cmd);
 
-  uint8_t tsys01_i2c_address;// = TSYS01_ADDR_CSB_0;
+  uint8_t TSYS01_i2c_address;// = TSYS01_ADDR_CSB_0;
 
-  bool tsys01_crc_check(uint16_t *n_prom);
+  bool TSYS01_crc_check(uint16_t *n_prom);
   float* coeff_mul;
   uint16_t eeprom_coeff[PROM_ELEMENTS_NUMBER];
 
-  bool tsys01_coeff_read;
+  bool TSYS01_coeff_read;
   
   I2C* i2c_;
 };

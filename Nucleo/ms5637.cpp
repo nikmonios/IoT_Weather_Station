@@ -44,10 +44,12 @@ MS5637::MS5637(PinName sda, PinName scl)
     i2c_->frequency(400000);
     coeff_read = false;
     
-    uint32_t tempArray[] = {
+    uint32_t tempArray[] = 
+    {
       MS5637_CONVERSION_TIME_OSR_256,  MS5637_CONVERSION_TIME_OSR_512,
       MS5637_CONVERSION_TIME_OSR_1024, MS5637_CONVERSION_TIME_OSR_2048,
-      MS5637_CONVERSION_TIME_OSR_4096, MS5637_CONVERSION_TIME_OSR_8192};
+      MS5637_CONVERSION_TIME_OSR_4096, MS5637_CONVERSION_TIME_OSR_8192
+    };
       
     conversion_time = new uint32_t[6];
     
@@ -268,14 +270,18 @@ enum MS5637_status MS5637::read_temperature_and_pressure(float *temperature, flo
   // First read temperature
   cmd = MS5637_resolution_osr * 2;
   cmd |= MS5637_START_TEMPERATURE_ADC_CONVERSION;
+  
   status = conversion_and_read_adc(cmd, &adc_temperature);
+  
   if (status != MS5637_status_ok)
     return status;
 
   // Now read pressure
   cmd = MS5637_resolution_osr * 2;
   cmd |= MS5637_START_PRESSURE_ADC_CONVERSION;
+  
   status = conversion_and_read_adc(cmd, &adc_pressure);
+  
   if (status != MS5637_status_ok)
     return status;
 
@@ -283,14 +289,10 @@ enum MS5637_status MS5637::read_temperature_and_pressure(float *temperature, flo
     return MS5637_status_i2c_transfer_error;
 
   // Difference between actual and reference temperature = D2 - Tref
-  dT = (int32_t)adc_temperature -
-       ((int32_t)eeprom_coeff[MS5637_REFERENCE_TEMPERATURE_INDEX] << 8);
+  dT = (int32_t)adc_temperature - ((int32_t)eeprom_coeff[MS5637_REFERENCE_TEMPERATURE_INDEX] << 8);
 
   // Actual temperature = 2000 + dT * TEMPSENS
-  TEMP = 2000 +
-         ((int64_t)dT *
-              (int64_t)eeprom_coeff[MS5637_TEMP_COEFF_OF_TEMPERATURE_INDEX] >>
-          23);
+  TEMP = 2000 + ((int64_t)dT * (int64_t)eeprom_coeff[MS5637_TEMP_COEFF_OF_TEMPERATURE_INDEX] >> 23);
 
   // Second order temperature compensation
   if (TEMP < 2000) 
@@ -313,18 +315,11 @@ enum MS5637_status MS5637::read_temperature_and_pressure(float *temperature, flo
   }
 
   // OFF = OFF_T1 + TCO * dT
-  OFF = ((int64_t)(eeprom_coeff[MS5637_PRESSURE_OFFSET_INDEX]) << 17) +
-        (((int64_t)(eeprom_coeff[MS5637_TEMP_COEFF_OF_PRESSURE_OFFSET_INDEX]) *
-          dT) >>
-         6);
+  OFF = ((int64_t)(eeprom_coeff[MS5637_PRESSURE_OFFSET_INDEX]) << 17) + (((int64_t)(eeprom_coeff[MS5637_TEMP_COEFF_OF_PRESSURE_OFFSET_INDEX]) * dT) >> 6);
   OFF -= OFF2;
 
   // Sensitivity at actual temperature = SENS_T1 + TCS * dT
-  SENS =
-      ((int64_t)eeprom_coeff[MS5637_PRESSURE_SENSITIVITY_INDEX] << 16) +
-      (((int64_t)eeprom_coeff[MS5637_TEMP_COEFF_OF_PRESSURE_SENSITIVITY_INDEX] *
-        dT) >>
-       7);
+  SENS = ((int64_t)eeprom_coeff[MS5637_PRESSURE_SENSITIVITY_INDEX] << 16) + (((int64_t)eeprom_coeff[MS5637_TEMP_COEFF_OF_PRESSURE_SENSITIVITY_INDEX] * dT) >> 7);
   SENS -= SENS2;
 
   // Temperature compensated pressure = D1 * SENS - OFF
