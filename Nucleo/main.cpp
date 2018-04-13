@@ -23,6 +23,7 @@
 #include "TEWeatherShield.h"
 #include <string> 
 
+
 Serial pc(USBTX,USBRX);     // UART tx, rx (to be sent to PC for debug)
 Serial Serial2(PA_2, PA_3); // Tx, Rx for esp8266 communication
 
@@ -34,10 +35,8 @@ string Samples;
 
 /**** functions prototypes ****/
 void wait_some_time();
-void construct_string_and_send( float htu21d_Temperature, float htu21d_Humidity, 
-float ms5637_Temp, float ms5637_Press, float ms8607_temperature, float ms8607_pressure, 
-float ms8607_humidity, float tsys01_temperature, float tsd305_temperature, 
-float tsd305_object_temperature);
+void construct_string_and_send( float *samples_array );
+void check_samples_state( float *samples_array );
 
 
 /********* MAIN **********/
@@ -53,6 +52,7 @@ int main(void)
     float tsys01_temperature = 0;  // TSYS01 temperature
     float tsd305_temperature = 0;  // TSD305 temperature
     float tsd305_object_temperature = 0; //TSD305 objective temperature
+    float Samples_Array[10];
     
     pc.baud(9600); // set UART baud rate
     
@@ -107,9 +107,22 @@ int main(void)
         
         
         /* construct the string that will send the info to ESP8266 */
-        construct_string_and_send ( htu21d_Temperature, htu21d_Humidity, ms5637_Temp,
-        ms5637_Press, ms8607_temperature, ms8607_pressure, ms8607_humidity, tsys01_temperature, 
-        tsd305_temperature, tsd305_object_temperature );
+        Samples_Array[0] = htu21d_Temperature;
+        Samples_Array[1] = htu21d_Humidity;
+        Samples_Array[2] = ms5637_Temp;
+        Samples_Array[3] = ms5637_Press;
+        Samples_Array[4] = ms8607_temperature;
+        Samples_Array[5] = ms8607_pressure;
+        Samples_Array[6] = ms8607_humidity;
+        Samples_Array[7] = tsys01_temperature;
+        Samples_Array[8] = tsd305_temperature;
+        Samples_Array[9] = tsd305_object_temperature;
+        
+        /* chech the status of the sensors */
+        check_samples_state( Samples_Array );
+        
+        /* if samples are OK, send the string to ESP8266 */
+        construct_string_and_send ( Samples_Array );
         
         /* wait 15 minutes */
         wait_some_time();     
@@ -117,18 +130,32 @@ int main(void)
     } // end of while 
 } // end of main
 
-/********* FUNCTIONS **********/
+/***************** FUNCTIONS *****************/
 
+/**
+ * \brief stops system untill next sampling period
+ *        
+ *
+ * \param[in] 
+ *
+ * \return 
+ */
 void wait_some_time()
 {
     int time = minutes * 60; // 15 * 60 = 900 seconds delay
     wait(time);
 }
 
-void construct_string_and_send( float htu21d_Temperature, float htu21d_Humidity, 
-float ms5637_Temp, float ms5637_Press, float ms8607_temperature, float ms8607_pressure, 
-float ms8607_humidity, float tsys01_temperature, float tsd305_temperature, 
-float tsd305_object_temperature )
+
+/**
+ * \brief fills string with samples and sends them to ESP8266
+ *        
+ *
+ * \param[in] float : array that contains samples from sensors
+ *
+ * \return 
+ */
+void construct_string_and_send( float *samples_array )
 {
     /* variables to be converted to strings */
     char htu21d_Temp_str[16];
@@ -143,18 +170,67 @@ float tsd305_object_temperature )
     char tsd305_obj_str[16];
     
     /* construct the string that will send the info to ESP8266 */
-    sprintf(htu21d_Temp_str, "%1.4lf", htu21d_Temperature);
-    sprintf(htu21d_Hum_str, "%1.4lf", htu21d_Humidity);
-    sprintf(ms5637_Temp_str, "%1.4lf", ms5637_Temp);
-    sprintf(ms5637_Press_str, "%1.4lf", ms5637_Press);
-    sprintf(ms8607_temp_str, "%1.4lf", ms8607_temperature);
-    sprintf(ms8607_pres_str, "%1.4lf", ms8607_pressure);
-    sprintf(ms8607_hum_str, "%1.4lf", ms8607_humidity);
-    sprintf(tsys01_temp_str, "%1.4lf", tsys01_temperature);
-    sprintf(tsd305_temp_str, "%1.4lf", tsd305_temperature);
-    sprintf(tsd305_obj_str, "%1.4lf", tsd305_object_temperature);
+    sprintf(htu21d_Temp_str, "%1.4lf", samples_array[0]);
+    sprintf(htu21d_Hum_str, "%1.4lf", samples_array[1]);
+    sprintf(ms5637_Temp_str, "%1.4lf", samples_array[2]);
+    sprintf(ms5637_Press_str, "%1.4lf", samples_array[3]);
+    sprintf(ms8607_temp_str, "%1.4lf", samples_array[4]);
+    sprintf(ms8607_pres_str, "%1.4lf", samples_array[5]);
+    sprintf(ms8607_hum_str, "%1.4lf", samples_array[6]);
+    sprintf(tsys01_temp_str, "%1.4lf", samples_array[7]);
+    sprintf(tsd305_temp_str, "%1.4lf", samples_array[8]);
+    sprintf(tsd305_obj_str, "%1.4lf", samples_array[9]);
     
     Serial2.printf("HTU21D_TEMP:%s,HTU21D_HUM:%s,MS5637_TEMP:%s,MS5637_PRESS:%s,MS8607_TEMP:%s,MS8607_PRESS:%s,MS8607_HUM:%s,TSYS01_TEMP:%s,TSD305_TEMP:%s,TSD305_OBJ:%s\r\n"
     ,htu21d_Temp_str, htu21d_Hum_str, ms5637_Temp_str, ms5637_Press_str, ms8607_temp_str,
     ms8607_pres_str, ms8607_hum_str, tsys01_temp_str, tsd305_temp_str, tsd305_obj_str);
+}
+
+
+/**
+ * \brief resets the board if a sensor is malfunctioning
+ *        
+ *
+ * \param[in] float : array that contains samples from sensors
+ *
+ * \return 
+ */
+void check_samples_state( float *samples_array )
+{
+    uint8_t flag = 0; // flags a sensor malfunction
+    
+    if(samples_array[0] == 0 && samples_array[1] == 0) // is 1st sensor ok?
+    {
+        flag = 1; // if not, raise flag
+    }
+    if(samples_array[2] == 0 && samples_array[3] == 0) // is 2nd sensor ok?
+    {
+        flag = 1; // if not, raise flag
+    }
+    if(samples_array[4] == 0 && samples_array[5] == 0 && samples_array[6] == 0) // is 3rd sensor ok?
+    {
+        flag = 1; // if not, raise flag
+    }
+    if(samples_array[7] == 0) // is 4th sensor ok?
+    {
+        flag = 1; // if not, raise flag
+    }
+    if(samples_array[8] == 0 && samples_array[9] == 0) // is 5th sensor ok?
+    {
+        flag = 1; // if not, raise flag
+    }
+    
+    //now check the status of the flag
+    if(flag == 0) // if flag is down
+    {
+        return; // return to program execution
+    }
+    else // if we have a malfunction
+    {
+        pc.printf("WARNING: A sensor is malfunctioning\r\n"); //for debug reasons
+        pc.printf("***** Board is restarting *****\r\n"); //for debug reasons
+        pc.printf("\r\n"); //for debug reasons
+        NVIC_SystemReset(); //reset the board
+    }
+        
 }
