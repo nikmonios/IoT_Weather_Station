@@ -25,7 +25,7 @@
 
 
 Serial pc(USBTX,USBRX);     // UART tx, rx (to be sent to PC for debug)
-Serial Serial2(PA_2, PA_3); // Tx, Rx for esp8266 communication
+Serial Serial2(D8, D2); // Tx, Rx for esp8266 communication
 
 static TEWeatherShield weatherShield; // load the shield
 
