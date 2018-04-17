@@ -21,22 +21,24 @@
 ***********************************************************************************/
 
 #include "TEWeatherShield.h"
+#include "parameters_struct.h"
 #include <string> 
 
 
-Serial pc(USBTX,USBRX);     // UART tx, rx (to be sent to PC for debug)
-Serial Serial2(D8, D2); // Tx, Rx for esp8266 communication
+Serial pc(USBTX, USBRX);     // UART tx, rx (to be sent to PC for debug)
+Serial Serial_ESP(D8, D2);
 
 static TEWeatherShield weatherShield; // load the shield
 
-uint8_t minutes = 15; //sampling period, take 4 measurements per hour (4 * 15 = 60)
+uint8_t minutes = 15; //sampling period in minutes, take 4 measurements per hour (4 * 15 = 60)
 
 string Samples;
 
 /**** functions prototypes ****/
 void wait_some_time();
-void construct_string_and_send( float *samples_array );
+void construct_string_and_send( parameters_struct &samples );
 void check_samples_state( float *samples_array );
+void mean_of_samples( float *samples_array, parameters_struct &samples);
 
 
 /********* MAIN **********/
@@ -52,7 +54,8 @@ int main(void)
     float tsys01_temperature = 0;  // TSYS01 temperature
     float tsd305_temperature = 0;  // TSD305 temperature
     float tsd305_object_temperature = 0; //TSD305 objective temperature
-    float Samples_Array[10];
+    float Samples_Array[10];       // store samples of each sensor here (temp & hum from 1st, temp & press from 2nd etc)
+    parameters_struct parameters;  // struct that stores the values of Temp, Press and Hum that will be transmitted to ESP8266
     
     pc.baud(9600); // set UART baud rate
     
@@ -121,8 +124,11 @@ int main(void)
         /* chech the status of the sensors */
         check_samples_state( Samples_Array );
         
+        /* find average from each sensor */
+        mean_of_samples( Samples_Array, parameters);
+        
         /* if samples are OK, send the string to ESP8266 */
-        construct_string_and_send ( Samples_Array );
+        construct_string_and_send ( parameters );
         
         /* wait 15 minutes */
         wait_some_time();     
@@ -155,35 +161,20 @@ void wait_some_time()
  *
  * \return 
  */
-void construct_string_and_send( float *samples_array )
+void construct_string_and_send( parameters_struct &samples )
 {
     /* variables to be converted to strings */
-    char htu21d_Temp_str[16];
-    char htu21d_Hum_str[16];
-    char ms5637_Temp_str[16];
-    char ms5637_Press_str[16];
-    char ms8607_temp_str[16];
-    char ms8607_pres_str[16];
-    char ms8607_hum_str[16];
-    char tsys01_temp_str[16];
-    char tsd305_temp_str[16];
-    char tsd305_obj_str[16];
+    char Temperature[16];
+    char Humidity[16];
+    char Pressure[16];
+
+    /* convert samples to strings */
+    sprintf(Temperature, "%1.4lf", samples.temperature);
+    sprintf(Humidity, "%1.4lf", samples.humidity);
+    sprintf(Pressure, "%1.4lf", samples.pressure);
     
-    /* construct the string that will send the info to ESP8266 */
-    sprintf(htu21d_Temp_str, "%1.4lf", samples_array[0]);
-    sprintf(htu21d_Hum_str, "%1.4lf", samples_array[1]);
-    sprintf(ms5637_Temp_str, "%1.4lf", samples_array[2]);
-    sprintf(ms5637_Press_str, "%1.4lf", samples_array[3]);
-    sprintf(ms8607_temp_str, "%1.4lf", samples_array[4]);
-    sprintf(ms8607_pres_str, "%1.4lf", samples_array[5]);
-    sprintf(ms8607_hum_str, "%1.4lf", samples_array[6]);
-    sprintf(tsys01_temp_str, "%1.4lf", samples_array[7]);
-    sprintf(tsd305_temp_str, "%1.4lf", samples_array[8]);
-    sprintf(tsd305_obj_str, "%1.4lf", samples_array[9]);
-    
-    Serial2.printf("HTU21D_TEMP:%s,HTU21D_HUM:%s,MS5637_TEMP:%s,MS5637_PRESS:%s,MS8607_TEMP:%s,MS8607_PRESS:%s,MS8607_HUM:%s,TSYS01_TEMP:%s,TSD305_TEMP:%s,TSD305_OBJ:%s\r\n"
-    ,htu21d_Temp_str, htu21d_Hum_str, ms5637_Temp_str, ms5637_Press_str, ms8607_temp_str,
-    ms8607_pres_str, ms8607_hum_str, tsys01_temp_str, tsd305_temp_str, tsd305_obj_str);
+    /* send them to ESP using serial com */
+    Serial_ESP.printf("TEMPERATURE:%s,HUMIDITY:%s,PRESSURE:%s\r\n",Temperature, Humidity, Pressure);
 }
 
 
@@ -199,33 +190,26 @@ void check_samples_state( float *samples_array )
 {
     uint8_t flag = 0; // flags a sensor malfunction
     
-    if(samples_array[0] == 0 && samples_array[1] == 0) // is 1st sensor ok?
+    if(samples_array[0] == 0 && samples_array[2] == 0 && samples_array[4] == 0 && samples_array[7] == 0 && samples_array[8] == 0) // have we got at least one temperature sample?
     {
         flag = 1; // if not, raise flag
     }
-    if(samples_array[2] == 0 && samples_array[3] == 0) // is 2nd sensor ok?
+    if(samples_array[1] == 0 && samples_array[6] == 0) // have we got at least one humidity sample?
     {
         flag = 1; // if not, raise flag
     }
-    if(samples_array[4] == 0 && samples_array[5] == 0 && samples_array[6] == 0) // is 3rd sensor ok?
+    if(samples_array[3] == 0 && samples_array[5] == 0) // have we got at least one pressure sample?
     {
         flag = 1; // if not, raise flag
     }
-    if(samples_array[7] == 0) // is 4th sensor ok?
-    {
-        flag = 1; // if not, raise flag
-    }
-    if(samples_array[8] == 0 && samples_array[9] == 0) // is 5th sensor ok?
-    {
-        flag = 1; // if not, raise flag
-    }
+
     
     //now check the status of the flag
     if(flag == 0) // if flag is down
     {
         return; // return to program execution
     }
-    else // if we have a malfunction
+    else // if we have at least one malfunction
     {
         pc.printf("WARNING: A sensor is malfunctioning\r\n"); //for debug reasons
         pc.printf("***** Board is restarting *****\r\n"); //for debug reasons
@@ -233,4 +217,76 @@ void check_samples_state( float *samples_array )
         NVIC_SystemReset(); //reset the board
     }
         
+}
+
+
+/**
+ * \brief finds average of each parameter from every sensor
+ *        
+ *
+ * \param[in] float : array that contains samples from sensors
+ *
+ * \return    structure that contains average of every physical parameter
+ */
+void mean_of_samples( float *samples_array, parameters_struct &samples)
+{
+    float avg_temperature = 0; /* average temperature that will be stored in struct */
+    float avg_humidity = 0; /* average humidity that will be stored in struct */
+    float avg_pressure = 0; /* average pressure  that will be stored in struct */
+    
+    /* arrays that are filled with all the samples from each physical parameter */
+    float temp[5] = {samples_array[0], samples_array[2], samples_array[4], samples_array[7], samples_array[8]};
+    float hum[2] = {samples_array[1], samples_array[6]};
+    float pres[2] = {samples_array[3], samples_array[5]};
+    
+    uint8_t i = 0; /* counter */
+    
+    uint8_t div = 0; /* divisor */
+    float sum = 0; /* temporary sum */
+    
+    /* find the average temperature from all working sensors */
+    for(i = 0; i < 5; i++)
+    {
+        if(temp[i] != 0) /* if a sensor is not working, don't add it*/
+        {
+            sum += temp[i];
+            div++; /* update divisor */
+        }
+    }
+    avg_temperature = sum / div; /* calculate average temperature */
+    
+    /* reset sum and div */
+    div = 0;
+    sum = 0;
+    
+    /* find the average humidity from all working sensors */
+    for(i = 0; i < 2; i++)
+    {
+        if(hum[i] != 0) /* if a sensor is not working, don't add it*/
+        {
+            sum += hum[i];
+            div++; /* update divisor */
+        }
+    }
+    avg_humidity = sum / div; /* calculate average humidity */
+    
+    /* reset sum and div */
+    div = 0;
+    sum = 0;
+    
+    /* find the average pressure from all working sensors */
+    for(i = 0; i < 2; i++)
+    {
+        if(pres[i] != 0) /* if a sensor is not working, don't add it*/
+        {
+            sum += pres[i];
+            div++; /* update divisor */
+        }
+    }
+    avg_pressure = sum / div; /* calculate average pressure */
+    
+    /* update the struct with the average values */
+    samples.temperature = avg_temperature;
+    samples.humidity = avg_humidity;
+    samples.pressure = avg_pressure;
 }
