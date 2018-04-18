@@ -22,7 +22,9 @@ So, the Nucleo F103RB is the board that will host the weather shield. It respons
 <br>
 The Raspberry Pi will be used to download the historical data from the Cayenne Cloud and make a forecast for the weather of the vicinity in the near future. The predictions will be re-uploaded to the cloud so the user can see them from any place in the planet - as long as there is an internet connection!
 <br>
+<br>
 This picture shows the topology of the application:
+<br>
 <br>
 ![alt text](http://i63.tinypic.com/5khdao.png)
 
