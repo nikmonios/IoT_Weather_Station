@@ -24,8 +24,7 @@ The Raspberry Pi will be used to download the historical data from the Cayenne C
 <br>
 This picture shows the topology of the application:
 <br>
-![alt text][logo]
-[logo]: https://www.dropbox.com/s/mzihgbuv0aezqul/topology.png?dl=0 "topology of application"
+![alt text](https://www.dropbox.com/s/mzihgbuv0aezqul/topology.png?dl=0)
 
 <br>
 <strong>Flashing the boards: </strong>
