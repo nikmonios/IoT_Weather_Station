@@ -33,6 +33,6 @@ uint16_t port = 6880;     // port number of the raspberry
 IPAddress server(192, 168, 0, 102);   // IP Address of the raspberry
 
 // how much serial data we expect before a newline
-const unsigned int MAX_INPUT = 35;
+const unsigned int MAX_INPUT = 128;
 
 //EoF

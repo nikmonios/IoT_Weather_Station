@@ -159,4 +159,38 @@ void processIncomingByte (const byte inByte)
    
 }
 /////////////////////////////////////////////////////////////////
+// here to process incoming serial data after a terminator received
+void process_data (const char * data)
+{
+  float values[3] = {0, 0, 0};
+  int i;
+
+  Serial.println("after parsing...");
+  char* command = strtok(data, ",");
+  while (command != 0)
+  {
+      i = 0;
+      // Split the command in two values
+      char* separator = strchr(command, ':');
+      if (separator != 0)
+      {
+        // Actually split the string in 2: replace ':' with 0
+        *separator = 0;
+        ++separator;
+      }
+      // Find the next command in input string
+      command = strtok(0, ",");
+      values[i] = atof(separator);
+   }
+
+   //we now have the data from the Nucleo Board.
+   //Use MQTT to send them to Cayenne cloud
+   data_to_cloud(values);
+}  // end of process_data
+/////////////////////////////////////////////////////////////////
+void data_to_cloud(float *samples)
+{
+
+}
+/////////////////////////////////////////////////////////////////
 //EoF
