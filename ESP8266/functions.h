@@ -160,13 +160,15 @@ void processIncomingByte (const byte inByte)
 }
 /////////////////////////////////////////////////////////////////
 // here to process incoming serial data after a terminator received
-void process_data (const char * data)
+void process_data (char * data)
 {
   float values[3] = {0, 0, 0};
   int i;
 
   Serial.println("after parsing...");
+  
   char* command = strtok(data, ",");
+  
   while (command != 0)
   {
       i = 0;
