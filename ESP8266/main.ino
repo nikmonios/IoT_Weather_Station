@@ -20,8 +20,6 @@
  **************************************************************************/
 #include "functions.h"
 
-const unsigned int MAX_INPUT = 128;
-
 void setup() 
 {
   initHardware(); //init pins, serial etc
@@ -42,36 +40,5 @@ void loop()
     processIncomingByte (Serial.read ()); //then read it and send it over Wi-Fi to raspberry pi
 }
 /************************************************************************/
-
-void processIncomingByte (const byte inByte)
-{
-  static char input_line [MAX_INPUT];
-  static unsigned int input_pos = 0;
-
-  switch (inByte)
-    {
-
-    case '\n':   // end of text
-      input_line [input_pos] = 0;  // terminating null byte
-      
-      // terminator reached! process input_line here ...
-      process_data (input_line);
-      
-      // reset buffer for next time
-      input_pos = 0;  
-      break;
-
-    case '\r':   // discard carriage return
-      break;
-
-    default:
-      // keep adding if not full ... allow for terminating null byte
-      if (input_pos < (MAX_INPUT - 1))
-        input_line [input_pos++] = inByte;
-      break;
-
-    }  // end of switch
-   
-} // end of processIncomingByte  
 //EoF
 
